@@ -252,7 +252,7 @@ const IssueDetail = () => {
                   
                   <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
                     <button 
-                      onClick={() => alert('Feature coming soon: Send email notification to citizen.')}
+                      onClick={() => alert('Email notification is automatically sent when you update the status above.')}
                       className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition-all"
                     >
                       <EnvelopeIcon className="w-5 h-5" />

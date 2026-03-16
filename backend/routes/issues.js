@@ -2,6 +2,7 @@ const express = require('express');
 const Issue = require('../models/Issue');
 const { auth, admin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { sendStatusUpdateEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -97,10 +98,20 @@ router.put('/:id/status', auth, admin, async (req, res) => {
       id,
       { status },
       { new: true }
-    ).populate('reportedBy', 'name');
+    ).populate('reportedBy', 'name email');
 
     if (!updatedIssue) {
       return res.status(404).json({ message: 'Issue not found.' });
+    }
+
+    // Trigger Email Notification (Async)
+    if (updatedIssue.reportedBy && updatedIssue.reportedBy.email) {
+      sendStatusUpdateEmail(
+        updatedIssue.reportedBy.email,
+        updatedIssue.reportedBy.name,
+        updatedIssue.title,
+        status
+      );
     }
 
     res.status(200).json(updatedIssue);
