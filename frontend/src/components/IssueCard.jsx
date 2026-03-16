@@ -64,74 +64,88 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
   const isReporter = user?.id === issue.reportedBy?._id || user?._id === issue.reportedBy?._id || user?.id === issue.reportedBy;
 
   return (
-    <div className="card p-6 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full bg-white dark:bg-gray-900/50 backdrop-blur-sm">
-      <div className="flex justify-between items-start gap-4 mb-4">
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-civic-600 transition-colors">
-            {issue.title}
-          </h3>
-          <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400 text-pretty">
-            <MapPinIcon className="w-4 h-4 shrink-0" />
-            {issue.location}
+    <div className="card border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full bg-white dark:bg-gray-900/50 backdrop-blur-sm overflow-hidden">
+      {/* Image Display */}
+      {issue.imageUrl && (
+        <div className="relative h-48 overflow-hidden group/img">
+          <img 
+            src={issue.imageUrl} 
+            alt={issue.title} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
+        </div>
+      )}
+
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex justify-between items-start gap-4 mb-4">
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-civic-600 transition-colors">
+              {issue.title}
+            </h3>
+            <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400 text-pretty">
+              <MapPinIcon className="w-4 h-4 shrink-0" />
+              {issue.location}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {isAdmin ? (
+              <div className="relative group/status">
+                <select
+                  value={issue.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={updating}
+                  className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none appearance-none pr-8 transition-all ${statusColors[issue.status] || statusColors['Pending']} ${updating ? 'opacity-50 animate-pulse' : ''}`}
+                >
+                  {statusOptions.map(opt => (
+                    <option key={opt} value={opt} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{opt}</option>
+                  ))}
+                </select>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {updating ? (
+                    <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${statusColors[issue.status] || statusColors['Pending']}`}>
+                {issue.status}
+              </span>
+            )}
+
+            {(isAdmin || isReporter) && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                title="Delete Issue"
+              >
+                {deleting ? (
+                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                ) : (
+                  <TrashIcon className="w-5 h-5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {isAdmin ? (
-            <div className="relative group/status">
-              <select
-                value={issue.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={updating}
-                className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none appearance-none pr-8 transition-all ${statusColors[issue.status] || statusColors['Pending']} ${updating ? 'opacity-50 animate-pulse' : ''}`}
-              >
-                {statusOptions.map(opt => (
-                  <option key={opt} value={opt} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{opt}</option>
-                ))}
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                {updating ? (
-                  <ArrowPathIcon className="w-3 h-3 animate-spin" />
-                ) : (
-                  <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                )}
-              </div>
-            </div>
-          ) : (
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${statusColors[issue.status] || statusColors['Pending']}`}>
-              {issue.status}
-            </span>
-          )}
 
-          {(isAdmin || isReporter) && (
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
-              title="Delete Issue"
-            >
-              {deleting ? (
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              ) : (
-                <TrashIcon className="w-5 h-5" />
-              )}
-            </button>
-          )}
-        </div>
-      </div>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 leading-relaxed">
+          {issue.description}
+        </p>
 
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 leading-relaxed">
-        {issue.description}
-      </p>
-
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
-          <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
-          <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 shrink-0">
-          <CalendarIcon className="w-4 h-4" />
-          {formatDate(issue.createdAt)}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
+            <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
+            <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+            <CalendarIcon className="w-4 h-4" />
+            {formatDate(issue.createdAt)}
+          </div>
         </div>
       </div>
     </div>

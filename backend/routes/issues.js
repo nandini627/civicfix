@@ -1,12 +1,13 @@
 const express = require('express');
 const Issue = require('../models/Issue');
 const { auth, admin } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
 // ─── POST /api/issues ──────────────────────────────────────────────────────────
 // Report a new civic issue
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     const { title, description, location } = req.body;
 
@@ -19,6 +20,7 @@ router.post('/', auth, async (req, res) => {
       description,
       location,
       reportedBy: req.user._id,
+      imageUrl: req.file ? req.file.path : '',
     });
 
     const savedIssue = await newIssue.save();

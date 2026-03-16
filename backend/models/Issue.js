@@ -24,6 +24,10 @@ const issueSchema = new mongoose.Schema({
     enum: ['Pending', 'In Progress', 'Resolved'],
     default: 'Pending',
   },
+  imageUrl: {
+    type: String,
+    default: '',
+  },
   createdAt: {
     type: Date,
     default: Date.now,

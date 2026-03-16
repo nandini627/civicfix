@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -8,13 +8,18 @@ import {
   TagIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
+  PhotoIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const ReportIssue = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({ title: '', description: '', location: '' });
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -40,6 +45,30 @@ const ReportIssue = () => {
     if (apiError) setApiError('');
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setApiError('Please select a valid image file.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setApiError('Image size should be less than 5MB.');
+        return;
+      }
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -50,16 +79,21 @@ const ReportIssue = () => {
 
     setLoading(true);
     try {
+      const formData = new FormData();
+      formData.append('title', form.title.trim());
+      formData.append('description', form.description.trim());
+      formData.append('location', form.location.trim());
+      if (image) {
+        formData.append('image', image);
+      }
+
       await axios.post(
         'http://localhost:5000/api/issues',
-        {
-          title: form.title.trim(),
-          description: form.description.trim(),
-          location: form.location.trim(),
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
@@ -178,6 +212,41 @@ const ReportIssue = () => {
                   value={form.location}
                   placeholder="e.g., Near City Park, Main Road Intersection"
                 />
+
+                {/* Image Upload Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Upload an Image (Optional)
+                  </label>
+                  {!preview ? (
+                    <div 
+                      onClick={() => fileInputRef.current.click()}
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-civic-500 dark:hover:border-civic-400 transition-all group"
+                    >
+                      <PhotoIcon className="w-10 h-10 text-gray-400 group-hover:text-civic-500 transition-colors" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag and drop</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                    </div>
+                  ) : (
+                    <div className="relative rounded-xl overflow-hidden group border border-gray-200 dark:border-gray-700">
+                      <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 p-1.5 bg-gray-900/50 hover:bg-gray-900/80 text-white rounded-full backdrop-blur-sm transition-all"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </div>
 
                 <div className="pt-2">
                   <button
