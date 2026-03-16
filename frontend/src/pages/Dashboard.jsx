@@ -55,6 +55,12 @@ const Dashboard = () => {
     { label: 'Resolved', val: issues.filter(i => i.status === 'Resolved').length, color: 'text-green-600' },
   ];
 
+  const handleUpdateIssue = (updatedIssue) => {
+    setIssues(prev => prev.map(issue => 
+      issue._id === updatedIssue._id ? updatedIssue : issue
+    ));
+  };
+
   return (
     <div className="min-h-screen py-12 px-4 animate-fade-in">
       <div className="max-w-6xl mx-auto">
@@ -69,7 +75,7 @@ const Dashboard = () => {
               <div>
                 <p className="text-civic-100 text-sm font-medium">Citizen Dashboard</p>
                 <h1 className="text-3xl font-bold text-white tracking-tight">{user?.name || 'Citizen'}</h1>
-                <p className="text-civic-200 text-sm">{user?.email}</p>
+                <p className="text-civic-200 text-sm">{user?.email}{user?.role === 'admin' && <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold tracking-widest tracking-tighter">Admin</span>}</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -155,7 +161,11 @@ const Dashboard = () => {
         ) : filteredIssues.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-fade-in">
             {filteredIssues.map(issue => (
-              <IssueCard key={issue._id} issue={issue} />
+              <IssueCard 
+                key={issue._id} 
+                issue={issue} 
+                onStatusUpdate={handleUpdateIssue}
+              />
             ))}
           </div>
         ) : (
