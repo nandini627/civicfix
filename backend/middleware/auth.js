@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -13,11 +14,24 @@ const auth = (req, res, next) => {
       return res.status(401).json({ message: 'Token verification failed, authorization denied.' });
     }
 
-    req.user = verified.id;
+    const user = await User.findById(verified.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ message: 'User not found, authorization denied.' });
+    }
+
+    req.user = user;
     next();
   } catch (err) {
     res.status(401).json({ message: 'Invalid token, authorization denied.' });
   }
 };
 
-module.exports = auth;
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Admin role required.' });
+  }
+};
+
+module.exports = { auth, admin };

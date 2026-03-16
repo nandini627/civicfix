@@ -1,6 +1,6 @@
 const express = require('express');
 const Issue = require('../models/Issue');
-const auth = require('../middleware/auth');
+const { auth, admin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.post('/', auth, async (req, res) => {
       title,
       description,
       location,
-      reportedBy: req.user,
+      reportedBy: req.user._id,
     });
 
     const savedIssue = await newIssue.save();
@@ -40,6 +40,34 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Error fetching issues:', err);
     res.status(500).json({ message: 'Server error. Could not fetch issues.' });
+  }
+});
+
+// ─── PUT /api/issues/:id/status ───────────────────────────────────────────────
+// Update issue status (Admin only)
+router.put('/:id/status', auth, admin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    if (!['Pending', 'In Progress', 'Resolved'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value.' });
+    }
+
+    const updatedIssue = await Issue.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).populate('reportedBy', 'name');
+
+    if (!updatedIssue) {
+      return res.status(404).json({ message: 'Issue not found.' });
+    }
+
+    res.status(200).json(updatedIssue);
+  } catch (err) {
+    console.error('Error updating status:', err);
+    res.status(500).json({ message: 'Server error. Could not update status.' });
   }
 });
 
