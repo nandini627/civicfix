@@ -30,7 +30,7 @@ const Profile = () => {
         });
         setProfileData(data);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to loaded profile data.');
+        setError(err.response?.data?.message || 'Failed to load profile data.');
       } finally {
         setLoading(false);
       }

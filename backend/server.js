@@ -1,4 +1,5 @@
 const express = require('express');
+console.log('>>> SERVER.JS STARTING - VERSION 2.1 <<<');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
@@ -6,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const issueRoutes = require('./routes/issues');
 const userRoutes = require('./routes/users');
+console.log('User routes loaded:', !!userRoutes, typeof userRoutes === 'function');
 
 const app = express();
 
@@ -16,9 +18,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ─── Logging Middleware ────────────────────────────────────────────────────────
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.originalUrl}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
   next();
 });
 
@@ -50,8 +55,9 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      const addr = server.address();
+      console.log(`🚀 Server running on http://${addr.address}:${addr.port}`);
     });
   })
   .catch((err) => {

@@ -10,6 +10,7 @@ const router = express.Router();
 // @desc    Get current user profile and their reported issues
 // @access  Private
 router.get('/profile', auth, async (req, res) => {
+  console.log('GET /api/users/profile called by:', req.user._id);
   try {
     const user = await User.findById(req.user._id).select('-password');
     if (!user) {
@@ -40,6 +41,7 @@ router.get('/profile', auth, async (req, res) => {
 // @desc    Update user profile (including avatar)
 // @access  Private
 router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
+  console.log('PUT /api/users/profile called by:', req.user._id);
   try {
     const { name, email } = req.body;
     const updateData = {};
