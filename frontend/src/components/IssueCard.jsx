@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { MapPinIcon, CalendarIcon, UserIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, CalendarIcon, UserIcon, ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
-const IssueCard = ({ issue, onStatusUpdate }) => {
+const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
   const { user, token } = useAuth();
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const statusColors = {
     'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
@@ -33,6 +34,24 @@ const IssueCard = ({ issue, onStatusUpdate }) => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) return;
+    
+    setDeleting(true);
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/issues/${issue._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (onDelete) onDelete(issue._id);
+    } catch (err) {
+      console.error('Failed to delete issue:', err);
+      alert(err.response?.data?.message || 'Failed to delete issue.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -42,9 +61,10 @@ const IssueCard = ({ issue, onStatusUpdate }) => {
   };
 
   const isAdmin = user?.role === 'admin';
+  const isReporter = user?.id === issue.reportedBy?._id || user?._id === issue.reportedBy?._id || user?.id === issue.reportedBy;
 
   return (
-    <div className="card p-6 hover:shadow-2xl transition-all duration-300 group flex flex-col h-full">
+    <div className="card p-6 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full bg-white dark:bg-gray-900/50 backdrop-blur-sm">
       <div className="flex justify-between items-start gap-4 mb-4">
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-civic-600 transition-colors">
@@ -56,34 +76,51 @@ const IssueCard = ({ issue, onStatusUpdate }) => {
           </div>
         </div>
         
-        {isAdmin ? (
-          <div className="relative group/status">
-            <select
-              value={issue.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              disabled={updating}
-              className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none appearance-none pr-8 transition-all ${statusColors[issue.status] || statusColors['Pending']} ${updating ? 'opacity-50 animate-pulse' : ''}`}
-            >
-              {statusOptions.map(opt => (
-                <option key={opt} value={opt} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{opt}</option>
-              ))}
-            </select>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-              {updating ? (
-                <ArrowPathIcon className="w-3 h-3 animate-spin" />
-              ) : (
-                <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-              )}
+        <div className="flex items-center gap-2">
+          {isAdmin ? (
+            <div className="relative group/status">
+              <select
+                value={issue.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={updating}
+                className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none appearance-none pr-8 transition-all ${statusColors[issue.status] || statusColors['Pending']} ${updating ? 'opacity-50 animate-pulse' : ''}`}
+              >
+                {statusOptions.map(opt => (
+                  <option key={opt} value={opt} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{opt}</option>
+                ))}
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                {updating ? (
+                  <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                ) : (
+                  <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                )}
+              </div>
             </div>
-          </div>
-        ) : (
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${statusColors[issue.status] || statusColors['Pending']}`}>
-            {issue.status}
-          </span>
-        )}
+          ) : (
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${statusColors[issue.status] || statusColors['Pending']}`}>
+              {issue.status}
+            </span>
+          )}
+
+          {(isAdmin || isReporter) && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+              title="Delete Issue"
+            >
+              {deleting ? (
+                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+              ) : (
+                <TrashIcon className="w-5 h-5" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1">
+      <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 leading-relaxed">
         {issue.description}
       </p>
 
