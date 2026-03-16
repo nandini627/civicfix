@@ -22,7 +22,7 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
     setUpdating(true);
     try {
       const { data } = await axios.put(
-        `http://localhost:5000/api/issues/${issue._id}/status`,
+        `/api/issues/${issue._id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -42,7 +42,7 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
     setDeleting(true);
     try {
       await axios.delete(
-        `http://localhost:5000/api/issues/${issue._id}`,
+        `/api/issues/${issue._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (onDelete) onDelete(issue._id);

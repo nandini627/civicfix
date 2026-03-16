@@ -102,7 +102,7 @@ const Signup = () => {
     setLoading(true);
     setApiError(''); // Clear previous errors
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/signup', {
+      const { data } = await axios.post('/api/auth/signup', {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,

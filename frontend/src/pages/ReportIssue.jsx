@@ -88,7 +88,7 @@ const ReportIssue = () => {
       }
 
       await axios.post(
-        'http://localhost:5000/api/issues',
+        '/api/issues',
         formData,
         {
           headers: {

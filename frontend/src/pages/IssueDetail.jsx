@@ -35,7 +35,7 @@ const IssueDetail = () => {
   useEffect(() => {
     const fetchIssue = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/issues/${id}`, {
+        const { data } = await axios.get(`/api/issues/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIssue(data);
@@ -53,7 +53,7 @@ const IssueDetail = () => {
     setUpdating(true);
     try {
       const { data } = await axios.put(
-        `http://localhost:5000/api/issues/${issue._id}/status`,
+        `/api/issues/${issue._id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -72,7 +72,7 @@ const IssueDetail = () => {
     setDeleting(true);
     try {
       await axios.delete(
-        `http://localhost:5000/api/issues/${issue._id}`,
+        `/api/issues/${issue._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       navigate('/dashboard');

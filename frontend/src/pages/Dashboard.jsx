@@ -32,7 +32,7 @@ const Dashboard = () => {
     const fetchIssues = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/issues?page=${page}&limit=6`);
+        const { data } = await axios.get(`/api/issues?page=${page}&limit=6`);
         setIssues(data.issues);
         setTotalPages(data.totalPages);
         setTotalIssues(data.totalIssues);
