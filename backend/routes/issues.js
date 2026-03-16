@@ -45,6 +45,8 @@ router.get('/', async (req, res) => {
 
 // ─── PUT /api/issues/:id/status ───────────────────────────────────────────────
 // Update issue status (Admin only)
+// ─── PUT /api/issues/:id/status ───────────────────────────────────────────────
+// Update issue status (Admin only)
 router.put('/:id/status', auth, admin, async (req, res) => {
   try {
     const { status } = req.body;
@@ -68,6 +70,32 @@ router.put('/:id/status', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error updating status:', err);
     res.status(500).json({ message: 'Server error. Could not update status.' });
+  }
+});
+
+// ─── DELETE /api/issues/:id ──────────────────────────────────────────────────
+// Delete a civic issue (Admin OR original reporter only)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id);
+    
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue not found.' });
+    }
+
+    // Check permissions: Admin can delete any issue, Citizens can delete only their own
+    const isReporter = issue.reportedBy.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isAdmin && !isReporter) {
+      return res.status(403).json({ message: 'Access denied. You can only delete your own reports.' });
+    }
+
+    await Issue.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Issue deleted successfully.' });
+  } catch (err) {
+    console.error('Error deleting issue:', err);
+    res.status(500).json({ message: 'Server error. Could not delete issue.' });
   }
 });
 

@@ -61,6 +61,10 @@ const Dashboard = () => {
     ));
   };
 
+  const handleDeleteIssue = (id) => {
+    setIssues(prev => prev.filter(issue => issue._id !== id));
+  };
+
   return (
     <div className="min-h-screen py-12 px-4 animate-fade-in">
       <div className="max-w-6xl mx-auto">
@@ -165,6 +169,7 @@ const Dashboard = () => {
                 key={issue._id} 
                 issue={issue} 
                 onStatusUpdate={handleUpdateIssue}
+                onDelete={handleDeleteIssue}
               />
             ))}
           </div>
