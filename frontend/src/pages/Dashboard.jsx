@@ -22,12 +22,20 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalIssues, setTotalIssues] = useState(0);
 
   useEffect(() => {
     const fetchIssues = async () => {
+      setLoading(true);
       try {
-        const { data } = await axios.get('http://localhost:5000/api/issues');
-        setIssues(data);
+        const { data } = await axios.get(`http://localhost:5000/api/issues?page=${page}&limit=6`);
+        setIssues(data.issues);
+        setTotalPages(data.totalPages);
+        setTotalIssues(data.totalIssues);
       } catch (err) {
         setError('Failed to load issues. Please try again later.');
       } finally {
@@ -35,13 +43,18 @@ const Dashboard = () => {
       }
     };
     fetchIssues();
-  }, []);
+  }, [page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterStatus]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  // Client-side filtering (for simplicity on the current page)
   const filteredIssues = issues.filter(issue => {
     const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          issue.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -50,9 +63,9 @@ const Dashboard = () => {
   });
 
   const stats = [
-    { label: 'Total Reports', val: issues.length, color: 'text-civic-600' },
-    { label: 'Pending', val: issues.filter(i => i.status === 'Pending').length, color: 'text-yellow-600' },
-    { label: 'Resolved', val: issues.filter(i => i.status === 'Resolved').length, color: 'text-green-600' },
+    { label: 'Total Reports', val: totalIssues, color: 'text-civic-600' },
+    { label: 'Displaying', val: issues.length, color: 'text-indigo-600' },
+    { label: 'Current Page', val: `${page}/${totalPages}`, color: 'text-amber-600' },
   ];
 
   const handleUpdateIssue = (updatedIssue) => {
@@ -63,6 +76,7 @@ const Dashboard = () => {
 
   const handleDeleteIssue = (id) => {
     setIssues(prev => prev.filter(issue => issue._id !== id));
+    setTotalIssues(prev => prev - 1);
   };
 
   return (
@@ -116,7 +130,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             Civic Issues Feed
             <span className="text-sm font-normal text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-              {filteredIssues.length} found
+              {filteredIssues.length} on this page
             </span>
           </h2>
 
@@ -163,16 +177,53 @@ const Dashboard = () => {
             <p className="text-gray-500 dark:text-gray-400">{error}</p>
           </div>
         ) : filteredIssues.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-fade-in">
-            {filteredIssues.map(issue => (
-              <IssueCard 
-                key={issue._id} 
-                issue={issue} 
-                onStatusUpdate={handleUpdateIssue}
-                onDelete={handleDeleteIssue}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-fade-in">
+              {filteredIssues.map(issue => (
+                <IssueCard 
+                  key={issue._id} 
+                  issue={issue} 
+                  onStatusUpdate={handleUpdateIssue}
+                  onDelete={handleDeleteIssue}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="mt-12 flex items-center justify-center gap-4">
+              <button
+                disabled={page === 1 || loading}
+                onClick={() => setPage(prev => prev - 1)}
+                className="px-6 py-2 rounded-xl font-bold text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400 transition-all disabled:opacity-30 disabled:hover:border-transparent"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setPage(i + 1)}
+                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                      page === i + 1
+                        ? 'bg-civic-600 text-white shadow-lg'
+                        : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                disabled={page === totalPages || loading}
+                onClick={() => setPage(prev => prev + 1)}
+                className="px-6 py-2 rounded-xl font-bold text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400 transition-all disabled:opacity-30 disabled:hover:border-transparent"
+              >
+                Next
+              </button>
+            </div>
+          </>
         ) : (
           <div className="card p-20 text-center">
             <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -181,7 +232,7 @@ const Dashboard = () => {
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No issues found</h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
               {searchTerm || filterStatus !== 'All' 
-                ? "We couldn't find any reports matching your filters. Try adjusting your search."
+                ? "We couldn't find any reports matching your filters on this page. Try adjusting your search."
                 : "Great news! There are no civic issues reported in your area yet."}
             </p>
           </div>

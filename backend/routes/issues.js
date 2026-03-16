@@ -32,13 +32,28 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // ─── GET /api/issues ───────────────────────────────────────────────────────────
-// Get all civic issues
+// Get all civic issues (with pagination)
 router.get('/', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
+    const skip = (page - 1) * limit;
+
+    const totalIssues = await Issue.countDocuments();
+    const totalPages = Math.ceil(totalIssues / limit);
+
     const issues = await Issue.find()
       .populate('reportedBy', 'name')
-      .sort({ createdAt: -1 });
-    res.status(200).json(issues);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      issues,
+      totalPages,
+      currentPage: page,
+      totalIssues
+    });
   } catch (err) {
     console.error('Error fetching issues:', err);
     res.status(500).json({ message: 'Server error. Could not fetch issues.' });
