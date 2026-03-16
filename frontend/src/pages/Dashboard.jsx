@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheckIcon, ArrowRightOnRectangleIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-
+// Dashboard function
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();

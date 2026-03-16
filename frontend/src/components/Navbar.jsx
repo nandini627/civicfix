@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { SunIcon, MoonIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
-
+// Navbar Function
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -41,6 +41,7 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>
+                <NavLink to="/report-issue" className={linkClass}>Report Issue</NavLink>
                 <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
                   Hi, {user?.name?.split(' ')[0]}
                 </span>

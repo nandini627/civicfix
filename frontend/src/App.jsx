@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import ReportIssue from './pages/ReportIssue';
 
 const App = () => {
   return (
@@ -25,6 +26,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/report-issue"
+                  element={
+                    <ProtectedRoute>
+                      <ReportIssue />
                     </ProtectedRoute>
                   }
                 />

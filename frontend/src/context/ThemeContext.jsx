@@ -9,6 +9,8 @@ export const ThemeProvider = ({ children }) => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  // Toggle theme on/off
+  // Light/dark mode
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
