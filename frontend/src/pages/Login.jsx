@@ -10,7 +10,8 @@ import {
   EyeSlashIcon,
   ShieldCheckIcon,
   ExclamationCircleIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 const Login = () => {

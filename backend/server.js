@@ -38,8 +38,8 @@ app.use('/api/users', userRoutes);
 const frontendPath = path.join(__dirname, '../frontend/dist');
 if (require('fs').existsSync(frontendPath)) {
   app.use(express.static(frontendPath));
-  app.get('*', (req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) return next();
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.originalUrl.startsWith('/api')) return next();
     res.sendFile(path.join(frontendPath, 'index.html'));
   });
   console.log('Serving frontend from:', frontendPath);
