@@ -1,30 +1,46 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPinIcon, CalendarIcon, UserIcon, ArrowPathIcon, TrashIcon, ShieldCheckIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { 
+  ChatBubbleBottomCenterIcon, 
+  MapPinIcon, 
+  CalendarIcon, 
+  TrashIcon, 
+  EllipsisVerticalIcon,
+  TagIcon,
+  ShieldCheckIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ArrowPathIcon,
+  PencilSquareIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
+
+const statusConfig = {
+  'Pending': { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: ClockIcon },
+  'In Progress': { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: ArrowPathIcon },
+  'Completed': { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircleIcon },
+  'Resolved': { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircleIcon },
+  'Rejected': { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: XCircleIcon },
+};
+
+const priorityConfig = {
+  'Low': { color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20' },
+  'Medium': { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  'High': { color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+  'Critical': { color: 'text-rose-600', bg: 'bg-rose-600/10', border: 'border-rose-600/20' },
+};
 
 const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
   const { user, token } = useAuth();
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const statusColors = {
-    'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-    'In Progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-    'Resolved': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
-    'Completed': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-    'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
-  };
-
-  const priorityColors = {
-    'Low': 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-    'Medium': 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-100 dark:border-blue-900/30',
-    'High': 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-100 dark:border-orange-900/30',
-    'Critical': 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-100 dark:border-red-900/30',
-  };
-
-  const statusOptions = ['Pending', 'In Progress', 'Completed', 'Rejected'];
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const status = statusConfig[issue.status] || statusConfig['Pending'];
+  const priority = priorityConfig[issue.priority] || priorityConfig['Medium'];
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === issue.status) return;
@@ -38,26 +54,22 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
       if (onStatusUpdate) onStatusUpdate(data);
     } catch (err) {
       console.error('Failed to update status:', err);
-      alert('Failed to update status. Only admins can do this.');
     } finally {
       setUpdating(false);
     }
   };
 
   const handleDelete = async (e) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
-    if (!window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) return;
-    
+    e.stopPropagation();
+    if (!window.confirm('Delete this report permanently?')) return;
     setDeleting(true);
     try {
-      await axios.delete(
-        `/api/issues/${issue._id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`/api/issues/${issue._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (onDelete) onDelete(issue._id);
     } catch (err) {
-      console.error('Failed to delete issue:', err);
-      alert(err.response?.data?.message || 'Failed to delete issue.');
+      console.error('Delete failed:', err);
     } finally {
       setDeleting(false);
     }
@@ -65,143 +77,121 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+      month: 'short', day: 'numeric', year: 'numeric'
     });
   };
 
-  const isAdmin = user?.role?.toLowerCase() === 'admin';
-  const isReporter = user?.id === issue.reportedBy?._id || user?._id === issue.reportedBy?._id || user?.id === issue.reportedBy;
-
   return (
-    <div className="card border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full bg-white dark:bg-gray-900/50 backdrop-blur-sm overflow-hidden relative">
-      <Link to={`/issues/${issue._id}`} className="absolute inset-0 z-0" aria-label="View Issue Details" />
+    <div className="group card-premium !p-0 flex flex-col h-full overflow-hidden animate-scale-in relative">
+      <Link to={`/issues/${issue._id}`} className="absolute inset-0 z-0" aria-label="View Details" />
       
-      {/* Image Display */}
-      {issue.imageUrl && (
-        <div className="relative h-48 overflow-hidden group/img">
-          <img 
-            src={issue.imageUrl} 
-            alt={issue.title} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
-          
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
-            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border backdrop-blur-md shadow-sm uppercase tracking-wider ${priorityColors[issue.priority] || priorityColors['Low']}`}>
-              {issue.priority || 'Low'}
-            </span>
+      <div className="relative h-48 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+        {issue.imageUrl ? (
+          <img src={issue.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-700">
+            <MapPinIcon className="w-12 h-12 mb-2 opacity-20" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">No Visual Attached</span>
           </div>
+        )}
+        
+        <div className={`absolute top-4 left-4 tag ${priority.bg} ${priority.color} border backdrop-blur-md z-10`}>
+          {issue.priority || 'Low'}
         </div>
-      )}
+        
+        <div className={`absolute top-4 right-4 py-1.5 px-3 rounded-full flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest border backdrop-blur-md z-10 ${status.bg} ${status.color} ${status.border}`}>
+          <status.icon className={`w-3 h-3 ${updating ? 'animate-spin' : ''}`} />
+          {issue.status}
+        </div>
+      </div>
 
-      <div className="p-6 flex flex-col flex-1 relative z-10 pointer-events-none">
-        <div className="flex justify-between items-start gap-4 mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-civic-600 transition-colors">
-              {issue.title}
-            </h3>
-            <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 dark:text-gray-400 text-pretty">
-              <MapPinIcon className="w-4 h-4 shrink-0" />
-              {issue.location}
-            </div>
+      <div className="p-5 md:p-6 flex flex-col flex-1 relative z-10">
+        <div className="mb-4 pointer-events-none">
+          <div className="flex items-center gap-2 text-slate-400 mb-2">
+            <TagIcon className="w-3 h-3" />
+            <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest leading-none">{issue.category || 'General'}</span>
           </div>
-          
-          <div className="flex items-center gap-2 pointer-events-auto">
-            {isAdmin ? (
-              <div className="relative group/status">
-                <select
-                  value={issue.status}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  disabled={updating}
-                  className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer outline-none appearance-none pr-8 transition-all ${statusColors[issue.status] || statusColors['Pending']} ${updating ? 'opacity-50 animate-pulse' : ''}`}
-                >
-                  {statusOptions.map(opt => (
-                    <option key={opt} value={opt} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{opt}</option>
-                  ))}
-                </select>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {updating ? (
-                    <ArrowPathIcon className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${statusColors[issue.status] || statusColors['Pending']}`}>
-                {issue.status}
-              </span>
-            )}
+          <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white group-hover:text-civic-600 transition-colors line-clamp-1 mb-1 md:mb-2">
+            {issue.title}
+          </h3>
+          <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed h-[2.5rem] md:h-[3rem]">
+            {issue.description}
+          </p>
+        </div>
 
-            {(isAdmin || isReporter) && (
-              <div className="flex items-center gap-1">
-                {isAdmin && (
-                  <Link
-                    to={`/issues/${issue._id}`}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-civic-600 hover:bg-civic-50 dark:hover:bg-civic-900/20 transition-all"
-                    title="Edit Issue"
-                  >
-                    <PencilSquareIcon className="w-5 h-5" />
-                  </Link>
-                )}
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
-                  title="Delete Issue"
-                >
-                  {deleting ? (
-                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <TrashIcon className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            )}
+        <div className="flex items-center gap-4 mb-6 pointer-events-none">
+          <div className="flex items-center gap-1.5 text-slate-400 min-w-0">
+            <MapPinIcon className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold truncate">{issue.location || 'City Zone'}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400 ml-auto">
+            <CalendarIcon className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-bold">{formatDate(issue.createdAt)}</span>
           </div>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 text-sm mb-6 line-clamp-3 flex-1 leading-relaxed">
-          {issue.description}
-        </p>
-
-        {/* Official Response Summary */}
+        {/* Authority Response Indicator */}
         {issue.officialResponse?.text && (
-          <div className="mb-4 p-3 bg-civic-50/50 dark:bg-civic-900/10 border border-civic-100/50 dark:border-civic-900/30 rounded-xl space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="w-4 h-4 text-civic-600 dark:text-civic-400" />
-                <span className="text-[10px] font-bold text-civic-700 dark:text-civic-300 uppercase tracking-wider">Authority Feedback</span>
-              </div>
-              {issue.officialResponse.imageUrl && (
-                <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-md">
-                  <PencilSquareIcon className="w-3 h-3" />
-                  PHOTO ATTACHED
-                </div>
-              )}
+          <div className="mb-6 p-4 bg-civic-50/50 dark:bg-civic-950/30 rounded-2xl border border-civic-100/30 dark:border-civic-900/30 pointer-events-none transition-all group-hover:bg-civic-50/80 dark:group-hover:bg-civic-950/40">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheckIcon className="w-3.5 h-3.5 text-civic-600" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-civic-700 dark:text-civic-400">Official Directive</span>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 italic font-medium">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 italic line-clamp-2 font-medium leading-relaxed">
               "{issue.officialResponse.text}"
             </p>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-          {!isAdmin && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
-              <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
-              <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
+        <div className="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between relative z-20">
+          {isAdmin ? (
+            <div className="flex items-center gap-2 w-full">
+              <div className="relative flex-1 group/select">
+                <select
+                  disabled={updating}
+                  value={issue.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className="w-full input-field !py-2.5 !pl-3 !pr-8 !text-[10px] !font-bold !uppercase !tracking-widest appearance-none bg-slate-50 dark:bg-slate-950/50 !border-slate-100 dark:!border-slate-800 focus:!ring-civic-500/20 cursor-pointer transition-all"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover/select:text-civic-500 transition-colors">
+                  <ArrowPathIcon className={`w-3.5 h-3.5 ${updating ? 'animate-spin' : ''}`} />
+                </div>
+              </div>
+              <button 
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all cursor-pointer border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20"
+                title="Delete Report"
+              >
+                <TrashIcon className={`w-5 h-5 ${deleting ? 'animate-pulse' : ''}`} />
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 min-w-0 pr-4">
+                <div className="relative shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+                    <UserIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                   <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-slate-400 leading-none mb-1">Reported By</span>
+                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-none">
+                     {issue.reportedBy?.name || 'Citizen'}
+                   </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-civic-600 group-hover:text-civic-500 transition-all shrink-0">
+                Details <EllipsisVerticalIcon className="w-4 h-4" />
+              </div>
+            </>
           )}
-          <div className={`flex flex-col items-end gap-1 text-[10px] text-gray-400 font-medium shrink-0 ${isAdmin ? 'ml-auto' : ''}`}>
-            <div className="flex items-center gap-1.5">
-              <CalendarIcon className="w-3 h-3" />
-              {formatDate(issue.createdAt)}
-            </div>
-            <span>Updated {formatDate(issue.updatedAt || issue.createdAt)}</span>
-          </div>
         </div>
       </div>
     </div>

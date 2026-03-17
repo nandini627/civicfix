@@ -10,16 +10,19 @@ import {
   EyeSlashIcon,
   ShieldCheckIcon,
   ExclamationCircleIcon,
+  ArrowRightIcon,
+  ArrowPathIcon,
+  IdentificationIcon
 } from '@heroicons/react/24/outline';
 
 const InputWrapper = ({ label, name, type = 'text', icon: Icon, rightIcon, value, onChange, errors, placeholder }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+  <div className="space-y-2">
+    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
       {label}
     </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <Icon className="w-5 h-5 text-gray-400" />
+    <div className="relative group">
+      <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+        <Icon className="w-5 h-5 text-slate-400 group-focus-within:text-civic-500 transition-colors" />
       </div>
       <input
         type={type}
@@ -28,26 +31,26 @@ const InputWrapper = ({ label, name, type = 'text', icon: Icon, rightIcon, value
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`input-field pl-10 ${rightIcon ? 'pr-10' : ''} ${
-          errors[name] ? 'border-red-400 dark:border-red-500 focus:ring-red-400' : ''
-        }`}
+        className={`input-field !h-14 !pl-16 !rounded-2xl !bg-slate-50 dark:!bg-slate-950/50 !border-slate-100 dark:!border-slate-800 focus:!border-civic-500 transition-all font-bold text-slate-700 dark:text-slate-200 ${
+          errors[name] ? '!border-rose-500' : ''
+        } ${rightIcon ? '!pr-16' : ''}`}
       />
       {rightIcon && (
         <button
           type="button"
           onClick={rightIcon.toggle}
-          className="absolute inset-y-0 right-3 flex items-center"
+          className="absolute inset-y-0 right-6 flex items-center text-slate-400 hover:text-civic-500 transition-colors"
         >
           {rightIcon.show ? (
-            <EyeSlashIcon className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
+            <EyeSlashIcon className="w-5 h-5" />
           ) : (
-            <EyeIcon className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
+            <EyeIcon className="w-5 h-5" />
           )}
         </button>
       )}
     </div>
     {errors[name] && (
-      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+      <p className="text-[10px] font-bold text-rose-500 flex items-center gap-1 ml-1 uppercase tracking-wider">
         <ExclamationCircleIcon className="w-4 h-4 shrink-0" />
         {errors[name]}
       </p>
@@ -58,7 +61,6 @@ const InputWrapper = ({ label, name, type = 'text', icon: Icon, rightIcon, value
 const Signup = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const nameRef = useRef(null);
 
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'citizen' });
   const [errors, setErrors] = useState({});
@@ -100,22 +102,18 @@ const Signup = () => {
     }
 
     setLoading(true);
-    setApiError(''); // Clear previous errors
+    setApiError('');
     try {
+
       const { data } = await axios.post('/api/auth/signup', {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
         role: form.role,
       });
-      console.log('Signup success. Updating auth state...');
       await login(data.user, data.token);
-      
-      // Give state a moment to propagate before nav if needed, 
-      // but usually navigate is fine. Let's redirect...
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      console.error('Signup error details:', err.response || err);
       const message = err.response?.data?.message || 'Connection error. Please ensure the server is running.';
       setApiError(message);
     } finally {
@@ -124,142 +122,159 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 animate-fade-in">
-      {/* Background blobs */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-civic-400 opacity-10 dark:opacity-5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-400 opacity-10 dark:opacity-5 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center py-20 px-4 bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="absolute top-0 left-0 w-full h-full bg-dot-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+      <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] bg-civic-500/10 blur-[120px] rounded-full pointer-events-none animate-float" />
+      <div className="absolute bottom-[20%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none animate-float" style={{ animationDelay: '2s' }} />
 
-      <div className="relative w-full max-w-md animate-slide-up">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex w-14 h-14 bg-civic-600 rounded-2xl items-center justify-center shadow-lg mx-auto mb-4">
-            <ShieldCheckIcon className="w-8 h-8 text-white" />
+      <div className="relative w-full max-w-2xl animate-scale-in">
+        {/* Branding */}
+        <div className="text-center mb-10 space-y-4">
+           <Link to="/" className="inline-flex items-center gap-3 group">
+            <div className="w-16 h-16 bg-gradient-to-br from-civic-600 to-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-civic-500/20 group-hover:scale-110 transition-transform duration-500">
+               <ShieldCheckIcon className="w-9 h-9 text-white" />
+            </div>
+            <span className="text-3xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase italic">
+              Civic<span className="text-civic-600">Fix</span>
+            </span>
+          </Link>
+          <div className="space-y-1">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter uppercase">
+              Join the <span className="text-gradient">Network</span>
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-slate-500 dark:text-slate-400 font-medium leading-tight">
+              Enlist as a community operative today
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create account</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-            Join CivicFix and help improve your city
-          </p>
         </div>
 
-        {/* Card */}
-        <div className="card p-8">
-          {apiError && (
-            <div className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2">
-              <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{apiError}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            <InputWrapper
-              label="Full Name"
-              name="name"
-              icon={UserIcon}
-              value={form.name}
-              onChange={handleChange}
-              errors={errors}
-              placeholder="John Doe"
-            />
-            <InputWrapper
-              label="Email Address"
-              name="email"
-              type="email"
-              icon={EnvelopeIcon}
-              value={form.email}
-              onChange={handleChange}
-              errors={errors}
-              placeholder="john@example.com"
-            />
-            <InputWrapper
-              label="Password"
-              name="password"
-              type={showPwd ? 'text' : 'password'}
-              icon={LockClosedIcon}
-              value={form.password}
-              onChange={handleChange}
-              errors={errors}
-              placeholder="Minimum 6 characters"
-              rightIcon={{ toggle: () => setShowPwd(p => !p), show: showPwd }}
-            />
-            <InputWrapper
-              label="Confirm Password"
-              name="confirmPassword"
-              type={showConfirm ? 'text' : 'password'}
-              icon={LockClosedIcon}
-              value={form.confirmPassword}
-              onChange={handleChange}
-              errors={errors}
-              placeholder="Re-enter your password"
-              rightIcon={{ toggle: () => setShowConfirm(p => !p), show: showConfirm }}
-            />
-
-            {/* Role Selection */}
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                I am signing up as:
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setForm(prev => ({ ...prev, role: 'citizen' }))}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                    form.role === 'citizen'
-                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
-                      : 'bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
-                  }`}
-                >
-                  <UserIcon className={`w-6 h-6 ${form.role === 'citizen' ? 'text-civic-600' : 'text-gray-400'}`} />
-                  <span className="text-sm font-bold">Citizen</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm(prev => ({ ...prev, role: 'admin' }))}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                    form.role === 'admin'
-                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
-                      : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
-                  }`}
-                >
-                  <ShieldCheckIcon className={`w-6 h-6 ${form.role === 'admin' ? 'text-civic-600' : 'text-gray-400'}`} />
-                  <span className="text-sm font-bold">Authority</span>
-                </button>
+        {/* Signup Card */}
+        <div className="glass-card p-1 shadow-2xl">
+          <div className="p-8 md:p-12 space-y-10">
+            {apiError && (
+              <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3 animate-slide-up">
+                <ExclamationCircleIcon className="w-6 h-6 text-rose-500 shrink-0" />
+                <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{apiError}</p>
               </div>
-            </div>
+            )}
 
-            <button
-              type="submit"
-              id="signup-submit"
-              disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} noValidate className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputWrapper
+                  label="Operative Name"
+                  name="name"
+                  icon={IdentificationIcon}
+                  value={form.name}
+                  onChange={handleChange}
+                  errors={errors}
+                  placeholder="John Doe"
+                />
+                <InputWrapper
+                  label="Secure Email"
+                  name="email"
+                  type="email"
+                  icon={EnvelopeIcon}
+                  value={form.email}
+                  onChange={handleChange}
+                  errors={errors}
+                  placeholder="john@intel.com"
+                />
+                <InputWrapper
+                  label="Primary Cipher"
+                  name="password"
+                  type={showPwd ? 'text' : 'password'}
+                  icon={LockClosedIcon}
+                  value={form.password}
+                  onChange={handleChange}
+                  errors={errors}
+                  placeholder="••••••••"
+                  rightIcon={{ toggle: () => setShowPwd(p => !p), show: showPwd }}
+                />
+                <InputWrapper
+                  label="Verify Cipher"
+                  name="confirmPassword"
+                  type={showConfirm ? 'text' : 'password'}
+                  icon={LockClosedIcon}
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  errors={errors}
+                  placeholder="••••••••"
+                  rightIcon={{ toggle: () => setShowConfirm(p => !p), show: showConfirm }}
+                />
+              </div>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-white dark:bg-gray-900 text-gray-400">Already have an account?</span>
+              {/* Role Selection */}
+              <div className="space-y-4">
+                <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 ml-1">Assigned Deployment Role</p>
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, role: 'citizen' }))}
+                    className={`flex items-center justify-center gap-2 md:gap-3 h-14 md:h-16 rounded-xl md:rounded-2xl border-2 transition-all duration-300 ${
+                      form.role === 'citizen'
+                        ? 'bg-civic-500/10 border-civic-500 text-civic-600 dark:text-civic-400 shadow-xl shadow-civic-500/10'
+                        : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
+                    }`}
+                  >
+                    <UserIcon className="w-5 h-5" />
+                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Citizen</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, role: 'admin' }))}
+                    className={`flex items-center justify-center gap-2 md:gap-3 h-14 md:h-16 rounded-xl md:rounded-2xl border-2 transition-all duration-300 ${
+                      form.role === 'admin'
+                        ? 'bg-indigo-500/10 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-xl shadow-indigo-500/10'
+                        : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
+                    }`}
+                  >
+                    <ShieldCheckIcon className="w-5 h-5" />
+                    <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Authority</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                id="signup-submit"
+                disabled={loading}
+                className="btn-primary !h-16 !rounded-2xl w-full flex items-center justify-center gap-3 shadow-2xl shadow-civic-500/20 active:scale-95 transition-all"
+              >
+                {loading ? (
+                  <ArrowPathIcon className="w-7 h-7 animate-spin" />
+                ) : (
+                  <>
+                    <span className="font-bold text-xs uppercase tracking-[0.3em]">Establish Presence</span>
+                    <ArrowRightIcon className="w-6 h-6" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="space-y-6">
+               <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-100 dark:border-slate-800" />
+                </div>
+                <div className="relative flex justify-center text-[10px]">
+                  <span className="px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-full font-bold uppercase tracking-widest text-slate-400">
+                    Existing operative?
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-center italic">
+                <Link
+                  to="/login"
+                  className="text-civic-600 dark:text-civic-400 font-bold uppercase tracking-widest text-xs hover:text-civic-500 transition-colors inline-flex items-center gap-2 group"
+                >
+                  Authorize Access
+                  <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </p>
             </div>
           </div>
-
-          <p className="text-center">
-            <Link
-              to="/login"
-              className="text-civic-600 dark:text-civic-400 font-medium hover:underline text-sm"
-            >
-              Sign in to your account
-            </Link>
-          </p>
         </div>
       </div>
     </div>

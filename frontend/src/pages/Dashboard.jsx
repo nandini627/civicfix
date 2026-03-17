@@ -10,7 +10,10 @@ import {
   FunnelIcon,
   ExclamationCircleIcon,
   PlusIcon,
-  TagIcon
+  TagIcon,
+  ChartPieIcon,
+  ListBulletIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import IssueCard from '../components/IssueCard';
 
@@ -31,8 +34,8 @@ const Dashboard = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalIssues, setTotalIssues] = useState(0);
-  const [statusCounts, setStatusCounts] = useState({ Pending: 0, 'In Progress': 0, Resolved: 0 });
-  const [showUnresponded, setShowUnresponded] = useState(false);
+  const [statusCounts, setStatusCounts] = useState({ Pending: 0, 'In Progress': 0, Resolved: 0, Completed: 0, Rejected: 0 });
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -41,10 +44,11 @@ const Dashboard = () => {
         let url = `/api/issues?page=${page}&limit=6&status=${filterStatus}`;
         if (filterPriority !== 'All') url += `&priority=${filterPriority}`;
         if (filterCategory !== 'All') url += `&category=${filterCategory}`;
-        if (showUnresponded) url += '&unresponded=true';
         if (filterScope === 'Mine') url += `&reportedBy=${user?._id || user?.id}`;
         
-        const { data } = await axios.get(url);
+        const { data } = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setIssues(data.issues);
         setTotalPages(data.totalPages);
         setTotalIssues(data.totalIssues);
@@ -56,7 +60,7 @@ const Dashboard = () => {
       }
     };
     fetchIssues();
-  }, [page, filterStatus, filterPriority, filterCategory, showUnresponded, filterScope]);
+  }, [page, filterStatus, filterPriority, filterCategory, filterScope]);
 
   useEffect(() => {
     setPage(1);
@@ -75,14 +79,14 @@ const Dashboard = () => {
 
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const stats = isAdmin ? [
-    { label: 'Pending', val: statusCounts.Pending || 0, color: 'text-yellow-600' },
-    { label: 'In Progress', val: statusCounts['In Progress'] || 0, color: 'text-blue-600' },
-    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-600' },
-    { label: 'Rejected', val: statusCounts.Rejected || 0, color: 'text-red-600' },
+    { label: 'Pending', val: statusCounts.Pending || 0, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: 'In Progress', val: statusCounts['In Progress'] || 0, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-500', bg: 'bg-emerald-510/10' },
+    { label: 'Rejected', val: statusCounts.Rejected || 0, color: 'text-rose-500', bg: 'bg-rose-500/10' },
   ] : [
-    { label: 'Total Reports', val: totalIssues, color: 'text-civic-600' },
-    { label: 'Displaying', val: issues.length, color: 'text-indigo-600' },
-    { label: 'Current Page', val: `${page}/${totalPages}`, color: 'text-amber-600' },
+    { label: 'Total Active', val: totalIssues, color: 'text-civic-600', bg: 'bg-civic-500/10' },
+    { label: 'Recent Updates', val: issues.filter(i => new Date(i.updatedAt) > new Date(Date.now() - 86400000)).length, color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
+    { label: 'Page', val: `${page}/${totalPages}`, color: 'text-purple-600', bg: 'bg-purple-500/10' },
   ];
 
   const handleUpdateIssue = (updatedIssue) => {
@@ -97,140 +101,162 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 animate-fade-in">
-      <div className="max-w-6xl mx-auto">
-        {/* Welcome banner */}
-        <div className="card p-8 mb-8 bg-gradient-to-br from-civic-600 to-indigo-600 border-0 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="min-h-screen py-8 md:py-12 px-4 md:px-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header Section */}
+        <section className="relative overflow-hidden glass-card !p-0 border-none shadow-2xl shadow-civic-500/10">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-civic-600/20 to-transparent pointer-events-none md:block hidden" />
+          <div className="flex flex-col md:flex-row items-stretch">
+            <div className="flex-1 p-6 md:p-12 space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                  <UserCircleIcon className="w-10 h-10 text-white" />
+                <div className="w-20 h-20 rounded-[2rem] bg-slate-900 dark:bg-white flex items-center justify-center shadow-2xl relative group">
+                  {user?.avatar ? (
+                    <img src={user.avatar} className="w-full h-full rounded-[2rem] object-cover" alt="" />
+                  ) : (
+                    <UserCircleIcon className="w-12 h-12 text-white dark:text-slate-900" />
+                  )}
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-900 shadow-lg" />
                 </div>
                 <div>
-                  <p className="text-civic-100 text-sm font-medium">{isAdmin ? 'Authority Control Center' : 'Civic Dashboard'}</p>
-                  <h1 className="text-3xl font-bold text-white tracking-tight">{user?.name || 'Citizen'}</h1>
-                  <p className="text-civic-200 text-sm">
-                    {user?.email}
-                    {isAdmin && <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold tracking-widest">Admin</span>}
+                  <h1 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight leading-none mb-2">
+                    {user?.name || 'Citizen'}
+                  </h1>
+                  <p className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {isAdmin ? 'System Administrator' : 'Active Community Member'}
                   </p>
                 </div>
               </div>
-            <div className="flex gap-3">
-              {!isAdmin && (
+              
+              <div className="flex flex-wrap gap-3">
+                {!isAdmin && (
+                  <button
+                    onClick={() => navigate('/report-issue')}
+                    className="btn-primary"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    New Report
+                  </button>
+                )}
                 <button
-                  onClick={() => navigate('/report-issue')}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-civic-600 hover:bg-civic-50 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
+                  onClick={handleLogout}
+                  className="btn-secondary !bg-slate-50 dark:!bg-slate-800/50 !border-slate-200 dark:!border-slate-800"
                 >
-                  <PlusIcon className="w-5 h-5" />
-                  Report New Issue
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all backdrop-blur-sm"
-              >
-                <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className={`grid gap-6 mb-8 ${isAdmin ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
-          {stats.map((stat, i) => (
-            <div key={i} className="card p-6 flex flex-col items-center text-center">
-              <div className={`text-3xl font-extrabold ${stat.color} dark:brightness-125 mb-1`}>{stat.val}</div>
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Main Feed Header */}
-        <div className="flex flex-col space-y-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              {isAdmin ? 'City-wide Issue Management' : (filterScope === 'Mine' ? 'My Reported Issues' : 'Civic Issues Feed')}
-              <span className="text-sm font-normal text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-                {totalIssues} total
-              </span>
-            </h2>
-
-            {/* View Toggle for Citizens */}
-            {!isAdmin && (
-              <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-800">
-                <button
-                  onClick={() => setFilterScope('All')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filterScope === 'All' ? 'bg-white dark:bg-gray-800 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Global Feed
-                </button>
-                <button
-                  onClick={() => setFilterScope('Mine')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filterScope === 'Mine' ? 'bg-white dark:bg-gray-800 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  My Reports
+                  <ArrowRightOnRectangleIcon className="w-5 h-5 text-rose-500" />
+                  Sign Out
                 </button>
               </div>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-2xl">
-            {/* Search */}
-            <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search issues..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10 h-12"
-              />
             </div>
 
-            {/* Filter */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1">
-                <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                <select
-                  value={filterStatus}
+            {/* Quick Stats Grid */}
+            <div className="bg-slate-50/50 dark:bg-slate-950/20 md:w-[400px] border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800/50 p-6 md:p-8 grid grid-cols-2 gap-4">
+              {stats.map((stat, i) => (
+                <div key={i} className="glass dark:bg-slate-900/40 p-4 rounded-3xl border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-center items-center text-center">
+                   <span className={`text-2xl font-bold ${stat.color} mb-1 tracking-tighter`}>{stat.val}</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{stat.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
+
+        {/* Dashboard Content */}
+        <section className="space-y-6">
+          <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex flex-wrap items-center gap-3">
+                {isAdmin ? 'City Operations' : 'Recent Reports'}
+                <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold">
+                  {totalIssues} TOTAL
+                </span>
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-xs md:text-sm"> Manage and monitor your community issues in real-time. </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              {/* Search Bar */}
+              <div className="relative group flex-1 sm:w-80">
+                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-civic-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Find a report..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-field !pl-12 !h-14 !text-sm !font-bold"
+                />
+              </div>
+              
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className={`btn-secondary !h-14 !px-6 ${showFilters ? '!bg-slate-900 !text-white dark:!bg-white dark:!text-slate-900' : ''}`}
+              >
+                <FunnelIcon className="w-5 h-5" />
+                Filters
+              </button>
+
+              {!isAdmin && (
+                <div className="flex p-1.5 glass-card !rounded-2xl border-slate-200 dark:border-slate-800 h-14">
+                  <button
+                    onClick={() => setFilterScope('All')}
+                    className={`flex-1 px-4 rounded-xl text-xs font-bold tracking-widest transition-all ${filterScope === 'All' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+                  >
+                    GLOBAL
+                  </button>
+                  <button
+                    onClick={() => setFilterScope('Mine')}
+                    className={`flex-1 px-4 rounded-xl text-xs font-bold tracking-widest transition-all ${filterScope === 'Mine' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+                  >
+                    MY REPORTS
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="glass-card p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 animate-scale-in">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-2 leading-none">Status State</label>
+                <select 
+                  value={filterStatus} 
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="input-field pl-10 h-12 appearance-none"
+                  className="input-field !py-3 !text-sm font-bold appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMTkgOWwtNyA3LTctNyIvPjwvc3ZnPg==')] bg-[length:1.25em_1.25em] bg-[right_1rem_center] bg-no-repeat"
                 >
                   <option value="All">All Statuses</option>
                   <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
+                  <option value="Completed">Completed</option>
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
-
-              <div className="relative flex-1">
-                <ShieldCheckIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                <select
-                  value={filterPriority}
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-2 leading-none">Priority Label</label>
+                <select 
+                  value={filterPriority} 
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="input-field pl-10 h-12 appearance-none"
+                  className="input-field !py-3 !text-sm font-bold appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMTkgOWwtNyA3LTctNyIvPjwvc3ZnPg==')] bg-[length:1.25em_1.25em] bg-[right_1rem_center] bg-no-repeat"
                 >
                   <option value="All">All Priorities</option>
-                  <option value="Low">Low Priority</option>
-                  <option value="Medium">Medium Priority</option>
-                  <option value="High">High Priority</option>
-                  <option value="Critical">Critical Priority</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
                 </select>
               </div>
-
-              <div className="relative flex-1">
-                <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                <select
-                  value={filterCategory}
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-2 leading-none">Issue Category</label>
+                <select 
+                  value={filterCategory} 
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="input-field pl-10 h-12 appearance-none"
+                  className="input-field !py-3 !text-sm font-bold appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMTkgOWwtNyA3LTctNyIvPjwvc3ZnPg==')] bg-[length:1.25em_1.25em] bg-[right_1rem_center] bg-no-repeat"
                 >
                   <option value="All">All Categories</option>
                   <option value="Pothole">Pothole</option>
-                  <option value="Garbage">Garbage / Waste</option>
+                  <option value="Garbage">Garbage</option>
                   <option value="Street Light">Street Light</option>
                   <option value="Water Leak">Water Leak</option>
                   <option value="Broken Sidewalk">Broken Sidewalk</option>
@@ -238,95 +264,80 @@ const Dashboard = () => {
                   <option value="Other">Other</option>
                 </select>
               </div>
-
-              {isAdmin && (
-                <label className="flex items-center gap-3 px-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:border-civic-400 transition-all select-none whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={showUnresponded}
-                    onChange={(e) => setShowUnresponded(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-civic-600 focus:ring-civic-500"
-                  />
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Unresponded</span>
-                </label>
-              )}
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Content Area */}
-        {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center">
-            <div className="w-12 h-12 border-4 border-civic-600 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Crunching civic data...</p>
-          </div>
-        ) : error ? (
-          <div className="card p-12 text-center border-red-100 dark:border-red-900/30">
-            <ExclamationCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Oops! Something went wrong</h3>
-            <p className="text-gray-500 dark:text-gray-400">{error}</p>
-          </div>
-        ) : filteredIssues.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-fade-in">
-              {filteredIssues.map(issue => (
+          {/* Issues Grid */}
+          {loading ? (
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+              <div className="w-12 h-12 border-4 border-civic-500/20 border-t-civic-600 rounded-full animate-spin" />
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest"> Fetching Reports... </p>
+            </div>
+          ) : filteredIssues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+              {filteredIssues.map((issue) => (
                 <IssueCard 
                   key={issue._id} 
                   issue={issue} 
-                  onStatusUpdate={handleUpdateIssue}
-                  onDelete={handleDeleteIssue}
+                  onDelete={() => setIssues(issues.filter(i => i._id !== issue._id))}
+                  onStatusUpdate={(updated) => setIssues(issues.map(i => i._id === updated._id ? updated : i))}
                 />
               ))}
             </div>
-
-            {/* Pagination Controls */}
-            <div className="mt-12 flex items-center justify-center gap-4">
-              <button
-                disabled={page === 1 || loading}
-                onClick={() => setPage(prev => prev - 1)}
-                className="px-6 py-2 rounded-xl font-bold text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400 transition-all disabled:opacity-30 disabled:hover:border-transparent"
+          ) : (
+            <div className="card-premium min-h-[400px] flex flex-col items-center justify-center text-center p-12">
+              <div className="w-24 h-24 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-8">
+                <ExclamationCircleIcon className="w-12 h-12 text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight"> No reports found </h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 font-medium"> We couldn't find any issues matching your current filters. Try adjusting your search or filters. </p>
+              <button 
+                onClick={() => {
+                  setFilterStatus('All');
+                  setFilterPriority('All');
+                  setFilterCategory('All');
+                  setSearchTerm('');
+                }}
+                className="btn-secondary"
               >
-                Previous
+                Clear all filters
+              </button>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-3 py-12">
+               <button 
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="btn-secondary !p-3 disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronRightIcon className="w-5 h-5 rotate-180" />
               </button>
               
               <div className="flex items-center gap-2">
                 {[...Array(totalPages)].map((_, i) => (
                   <button
-                    key={i + 1}
+                    key={i}
                     onClick={() => setPage(i + 1)}
-                    className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                      page === i + 1
-                        ? 'bg-civic-600 text-white shadow-lg'
-                        : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400'
-                    }`}
+                    className={`w-12 h-12 rounded-2xl text-sm font-bold transition-all ${page === i + 1 ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xl' : 'glass-card border-none hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'}`}
                   >
                     {i + 1}
                   </button>
                 ))}
               </div>
 
-              <button
-                disabled={page === totalPages || loading}
-                onClick={() => setPage(prev => prev + 1)}
-                className="px-6 py-2 rounded-xl font-bold text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-civic-400 transition-all disabled:opacity-30 disabled:hover:border-transparent"
+               <button 
+                disabled={page === totalPages}
+                onClick={() => setPage(page + 1)}
+                className="btn-secondary !p-3 disabled:opacity-30 disabled:pointer-events-none"
               >
-                Next
+                <ChevronRightIcon className="w-5 h-5" />
               </button>
             </div>
-          </>
-        ) : (
-          <div className="card p-20 text-center">
-            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheckIcon className="w-10 h-10 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No issues found</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-              {searchTerm || filterStatus !== 'All' 
-                ? "We couldn't find any reports matching your filters on this page. Try adjusting your search."
-                : "Great news! There are no civic issues reported in your area yet."}
-            </p>
-          </div>
-        )}
+          )}
+        </section>
       </div>
     </div>
   );

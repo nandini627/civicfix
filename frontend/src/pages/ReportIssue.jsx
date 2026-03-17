@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import {
@@ -9,28 +9,30 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon,
   PhotoIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronLeftIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
 const InputWrapper = ({ label, name, type = 'text', icon: Icon, value, onChange, errors, placeholder, isTextArea = false }) => (
-  <div>
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+  <div className="space-y-2">
+    <label htmlFor={name} className="block text-xs font-bold uppercase tracking-[0.15em] text-slate-400 px-1">
       {label}
     </label>
-    <div className="relative">
-      <div className={`absolute ${isTextArea ? 'top-3' : 'inset-y-0'} left-3 flex items-center pointer-events-none`}>
-        <Icon className="w-5 h-5 text-gray-400" />
+    <div className="relative group">
+      <div className={`absolute ${isTextArea ? 'top-4' : 'inset-y-0'} left-4 flex items-center pointer-events-none transition-colors group-focus-within:text-civic-500`}>
+        <Icon className="w-5 h-5 text-slate-400" />
       </div>
       {isTextArea ? (
         <textarea
           name={name}
           id={name}
-          rows="4"
+          rows="5"
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`input-field pl-10 resize-none ${
-            errors[name] ? 'border-red-400 dark:border-red-500 focus:ring-red-400' : ''
+          className={`input-field !pl-12 resize-none !py-4 ${
+            errors[name] ? '!border-rose-500 focus:!ring-rose-500' : ''
           }`}
         />
       ) : (
@@ -41,15 +43,15 @@ const InputWrapper = ({ label, name, type = 'text', icon: Icon, value, onChange,
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`input-field pl-10 ${
-            errors[name] ? 'border-red-400 dark:border-red-500 focus:ring-red-400' : ''
+          className={`input-field !pl-12 !h-14 ${
+            errors[name] ? '!border-rose-500 focus:!ring-rose-500' : ''
           }`}
         />
       )}
     </div>
     {errors[name] && (
-      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-        <ExclamationCircleIcon className="w-4 h-4 shrink-0" />
+      <p className="mt-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-500 px-1">
+        <ExclamationCircleIcon className="w-3.5 h-3.5" />
         {errors[name]}
       </p>
     )}
@@ -67,7 +69,7 @@ const ReportIssue = () => {
     }
   }, [user, navigate]);
 
-  const [form, setForm] = useState({ title: '', description: '', location: '', category: 'Other' });
+  const [form, setForm] = useState({ title: '', description: '', location: '', category: 'Pothole' });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
@@ -79,14 +81,9 @@ const ReportIssue = () => {
     const errs = {};
     if (!form.title.trim()) errs.title = 'Title is required';
     else if (form.title.trim().length < 5) errs.title = 'Title must be at least 5 characters';
-
     if (!form.description.trim()) errs.description = 'Description is required';
     else if (form.description.trim().length < 10) errs.description = 'Description must be at least 10 characters';
-
     if (!form.location.trim()) errs.location = 'Location is required';
-    
-    if (!form.category) errs.category = 'Category is required';
-
     return errs;
   };
 
@@ -102,10 +99,6 @@ const ReportIssue = () => {
     if (file) {
       if (!file.type.startsWith('image/')) {
         setApiError('Please select a valid image file.');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setApiError('Image size should be less than 5MB.');
         return;
       }
       setImage(file);
@@ -136,20 +129,14 @@ const ReportIssue = () => {
       formData.append('description', form.description.trim());
       formData.append('location', form.location.trim());
       formData.append('category', form.category);
-      if (image) {
-        formData.append('image', image);
-      }
+      if (image) formData.append('image', image);
 
-      await axios.post(
-        '/api/issues',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      await axios.post('/api/issues', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setSuccess(true);
       setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
@@ -160,161 +147,173 @@ const ReportIssue = () => {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 animate-fade-in relative overflow-hidden">
-      {/* Decorative Blobs */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-civic-400/10 dark:bg-civic-400/5 rounded-full blur-3xl" />
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-400/10 dark:bg-indigo-400/5 rounded-full blur-3xl" />
+    <div className="min-h-screen py-8 md:py-20 px-4 md:px-6 relative overflow-hidden bg-slate-50 dark:bg-slate-950">
+      {/* Background patterns */}
+      <div className="absolute top-0 left-0 w-full h-full bg-dot-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+      <div className="absolute -top-[10%] -right-[5%] w-[40%] h-[40%] bg-civic-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-[10%] -left-[5%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-2xl mx-auto relative">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-            Report a Civic Issue
-          </h1>
-          <p className="mt-3 text-lg text-gray-500 dark:text-gray-400">
-            Help us make your neighborhood better by reporting problems directly to authorities.
-          </p>
-        </div>
+      <div className="max-w-3xl mx-auto relative">
+        <Link to="/dashboard" className="inline-flex items-center gap-2 mb-8 text-slate-500 hover:text-civic-600 transition-colors group">
+          <div className="w-10 h-10 rounded-xl glass-card flex items-center justify-center group-hover:scale-110 transition-transform">
+             <ChevronLeftIcon className="w-5 h-5" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
+        </Link>
 
-        <div className="card p-8 sm:p-10">
-          {success ? (
-            <div className="text-center py-8 animate-scale-in">
-              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircleIcon className="w-12 h-12 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Report Submitted!</h2>
-              <p className="text-gray-500 dark:text-gray-400">
-                Thank you for your contribution. We'll start tracking this issue immediately.
-                Redirecting to dashboard...
-              </p>
+        {success ? (
+          <div className="glass-card p-12 text-center animate-scale-in">
+            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 animate-float">
+              <CheckCircleIcon className="w-12 h-12 text-emerald-500" />
             </div>
-          ) : (
-            <>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Report Received!</h1>
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">
+              Thank you for contributing to your community. We've notified the relevant authorities. Redirecting you shortly...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tighter">
+                Report <span className="text-gradient">Issue</span>
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xl text-base md:text-lg"> Help us identify and fix problems in your neighborhood by providing accurate details below. </p>
+            </div>
+
+            <div className="glass-card p-6 md:p-12 shadow-2xl shadow-civic-500/5">
               {apiError && (
-                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
-                  <ExclamationCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{apiError}</p>
+                <div className="mb-6 md:mb-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 animate-shake">
+                  <ExclamationCircleIcon className="w-5 md:w-6 h-5 md:h-6 text-rose-500 shrink-0" />
+                  <p className="text-xs md:text-sm text-rose-600 dark:text-rose-400 font-bold">{apiError}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <InputWrapper
-                  label="What is the problem?"
-                  name="title"
-                  icon={TagIcon}
-                  value={form.title}
-                  onChange={handleChange}
-                  errors={errors}
-                  placeholder="e.g., Pothole on High Street, Broken Streetlight"
-                />
-
-                <InputWrapper
-                  label="Provide more details"
-                  name="description"
-                  icon={ChatBubbleLeftRightIcon}
-                  isTextArea={true}
-                  value={form.description}
-                  onChange={handleChange}
-                  errors={errors}
-                  placeholder="Describe the issue in detail so authorities can understand it better..."
-                />
-
-                <InputWrapper
-                  label="Location"
-                  name="location"
-                  icon={MapPinIcon}
-                  value={form.location}
-                  onChange={handleChange}
-                  errors={errors}
-                  placeholder="e.g., Near City Park, Intersection of Broadway"
-                />
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Issue Category
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                      <TagIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <select
-                      name="category"
-                      value={form.category}
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="md:col-span-2">
+                    <InputWrapper
+                      label="Brief Title"
+                      name="title"
+                      icon={TagIcon}
+                      value={form.title}
                       onChange={handleChange}
-                      className={`input-field pl-10 appearance-none ${
-                        errors.category ? 'border-red-400 focus:ring-red-400' : ''
-                      }`}
-                    >
-                      <option value="Pothole">Pothole</option>
-                      <option value="Garbage">Garbage / Waste</option>
-                      <option value="Street Light">Street Light Issue</option>
-                      <option value="Water Leak">Water / Sewage Leak</option>
-                      <option value="Broken Sidewalk">Broken Sidewalk</option>
-                      <option value="Park Maintenance">Park Maintenance</option>
-                      <option value="Other">Other Category</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
+                      errors={errors}
+                      placeholder="e.g., Deep pothole at Central Ave"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <InputWrapper
+                      label="Detailed Description"
+                      name="description"
+                      icon={ChatBubbleLeftRightIcon}
+                      isTextArea={true}
+                      value={form.description}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Describe the issue size, duration, and any hazards it poses..."
+                    />
+                  </div>
+
+                  <InputWrapper
+                    label="Problem Location"
+                    name="location"
+                    icon={MapPinIcon}
+                    value={form.location}
+                    onChange={handleChange}
+                    errors={errors}
+                    placeholder="Physical address or landmark"
+                  />
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-[0.15em] text-slate-400 px-1">
+                      Issue Category
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <TagIcon className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <select
+                        name="category"
+                        value={form.category}
+                        onChange={handleChange}
+                        className="input-field !pl-12 !h-14 md:!h-16 appearance-none !font-bold text-xs md:text-sm bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMTkgOWwtNyA3LTctNyIvPjwvc3ZnPg==')] bg-[length:1.25em_1.25em] bg-[right_1rem_center] bg-no-repeat"
+                      >
+                        <option value="Pothole">Pothole</option>
+                        <option value="Garbage">Garbage / Waste</option>
+                        <option value="Street Light">Street Light</option>
+                        <option value="Water Leak">Water Leak</option>
+                        <option value="Broken Sidewalk">Broken Sidewalk</option>
+                        <option value="Park Maintenance">Park Maintenance</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-[0.15em] text-slate-400 px-1 mb-2">
+                      Visual Evidence
+                    </label>
+                    {!preview ? (
+                      <div 
+                        onClick={() => fileInputRef.current.click()}
+                        className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-10 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-civic-500 dark:hover:border-civic-500 transition-all group bg-slate-50/50 dark:bg-slate-900/40"
+                      >
+                        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <PhotoIcon className="w-8 h-8 text-slate-400 group-hover:text-civic-500 transition-colors" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">Upload Photograph</p>
+                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">PNG or JPG up to 5MB</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative rounded-3xl overflow-hidden group aspect-video shadow-2xl">
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                           <button
+                            type="button"
+                            onClick={removeImage}
+                            className="p-4 bg-rose-500 text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                          >
+                            <XMarkIcon className="w-8 h-8" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
                 </div>
 
-                {/* Image Upload Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Upload an Image (Optional)
-                  </label>
-                  {!preview ? (
-                    <div 
-                      onClick={() => fileInputRef.current.click()}
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-civic-500 dark:hover:border-civic-400 transition-all group"
-                    >
-                      <PhotoIcon className="w-10 h-10 text-gray-400 group-hover:text-civic-500 transition-colors" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Click to upload or drag and drop</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">PNG, JPG, JPEG up to 5MB</p>
-                    </div>
-                  ) : (
-                    <div className="relative rounded-xl overflow-hidden group border border-gray-200 dark:border-gray-700">
-                      <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 p-1.5 bg-gray-900/50 hover:bg-gray-900/80 text-white rounded-full backdrop-blur-sm transition-all"
-                      >
-                        <XMarkIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-
-                <div className="pt-2">
+                <div className="pt-6">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn-primary flex items-center justify-center gap-2 disabled:opacity-70"
+                    className="btn-primary !h-16 w-full md:w-auto md:!px-12 text-lg"
                   >
                     {loading ? (
-                      <>
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Submitting Report...
-                      </>
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span className="font-bold">Uploading...</span>
+                      </div>
                     ) : (
-                      'Submit Report'
+                      <span className="flex items-center justify-center gap-3 font-bold">
+                        Submit Final Report
+                        <ArrowRightIcon className="w-6 h-6" />
+                      </span>
                     )}
                   </button>
                 </div>
               </form>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

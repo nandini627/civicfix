@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   UserCircleIcon,
@@ -9,7 +10,9 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ArrowPathIcon,
-  CameraIcon
+  CameraIcon,
+  ArrowRightIcon,
+  IdentificationIcon
 } from '@heroicons/react/24/outline';
 import IssueCard from '../components/IssueCard';
 
@@ -58,9 +61,7 @@ const Profile = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      // Update local profile data
       setProfileData(prev => ({ ...prev, user: { ...prev.user, avatar: data.avatar } }));
-      // Update global auth context
       updateUser({ avatar: data.avatar });
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to upload avatar.');
@@ -88,20 +89,25 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen py-24 flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-civic-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-500 dark:text-gray-400 font-medium">Loading your profile...</p>
+      <div className="min-h-screen pt-32 flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-civic-500/20 border-t-civic-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-10 h-10 bg-civic-500 rounded-full animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-8 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.2em] text-sm leading-none">Accessing Dossier...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen py-24 px-4 overflow-hidden">
-        <div className="max-w-md mx-auto card p-12 text-center border-red-100 dark:border-red-900/30">
-          <ExclamationCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error Loading Profile</h3>
-          <p className="text-gray-500 dark:text-gray-400">{error}</p>
+      <div className="min-h-screen pt-32 px-4 bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-md mx-auto glass-card p-12 text-center border-rose-500/20">
+          <ExclamationCircleIcon className="w-16 h-16 text-rose-500 mx-auto mb-6" />
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 uppercase tracking-tighter">Access Denied</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{error}</p>
         </div>
       </div>
     );
@@ -110,74 +116,97 @@ const Profile = () => {
   const { stats, issues, user: profileUser } = profileData;
 
   const statCards = [
-    { label: 'Total Reports', val: stats.total, icon: ShieldCheckIcon, color: 'text-civic-600', bg: 'bg-civic-50 dark:bg-civic-900/20' },
-    { label: 'Resolved', val: stats.resolved, icon: CheckCircleIcon, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
-    { label: 'Pending', val: stats.pending, icon: ClockIcon, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-    { label: 'In Progress', val: stats.inProgress, icon: ArrowPathIcon, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Total Operations', val: stats.total, icon: ShieldCheckIcon, color: 'text-civic-500', bg: 'bg-civic-500/10', border: 'border-civic-500/20' },
+    { label: 'Successful', val: stats.resolved, icon: CheckCircleIcon, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { label: 'Pending', val: stats.pending, icon: ClockIcon, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+    { label: 'Active', val: stats.inProgress, icon: ArrowPathIcon, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
   ];
 
   return (
-    <div className="min-h-screen py-12 px-4 animate-fade-in relative overflow-hidden">
+    <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-civic-500/5 rounded-full blur-3xl -mr-48 -mt-48" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -ml-48 -mb-48" />
+      <div className="absolute top-0 left-0 w-full h-full bg-dot-pattern opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
+      <div className="absolute top-[10%] -left-[10%] w-[50%] h-[50%] bg-civic-500/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[150px] rounded-full pointer-events-none" />
 
-      <div className="max-w-6xl mx-auto relative">
+      <div className="max-w-7xl mx-auto relative space-y-12">
         {/* Profile Hero Header */}
-        <div className="card p-8 mb-8 border-0 shadow-xl bg-gradient-to-r from-gray-900 to-gray-800 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
-            <svg className="w-full h-full" fill="none" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path d="M0 100 C 20 0 50 0 100 100 Z" fill="currentColor" className="text-white/20" />
-            </svg>
-          </div>
-          
-          <div className="relative flex flex-col md:flex-row items-center gap-8">
-            <div className="relative group">
-              <div className="w-32 h-32 bg-white/10 p-1 rounded-3xl backdrop-blur-md shadow-2xl relative z-10 transition-transform group-hover:scale-[1.02]">
-                <div className="w-full h-full bg-civic-600 rounded-2xl flex items-center justify-center overflow-hidden">
-                  {profileUser.avatar ? (
-                    <img src={profileUser.avatar} alt={profileUser.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserCircleIcon className="w-20 h-20 text-white" />
-                  )}
-                  
-                  {uploading && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-20">
-                      <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
+        <div className="glass-card shadow-2xl relative overflow-hidden border-slate-200/50 dark:border-slate-800/50">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-8 md:p-12 relative">
+             {/* Decorative abstract elements */}
+             <div className="absolute inset-0 bg-dot-pattern opacity-10" />
+             <div className="absolute -top-24 -right-24 w-96 h-96 bg-civic-500/20 rounded-full blur-3xl" />
+             
+             <div className="relative flex flex-col md:flex-row items-center gap-10">
+              <div className="relative group shrink-0">
+                <div className="w-28 h-28 md:w-40 md:h-40 bg-white/5 p-1 md:p-1.5 rounded-3xl md:rounded-[2.5rem] backdrop-blur-xl shadow-2xl relative z-10 transition-transform duration-500 group-hover:scale-105">
+                  <div className="w-full h-full bg-slate-800 rounded-2xl md:rounded-[2rem] flex items-center justify-center overflow-hidden border-2 border-white/10 group-hover:border-civic-500/50 transition-colors">
+                    {profileUser.avatar ? (
+                      <img src={profileUser.avatar} alt={profileUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <UserCircleIcon className="w-24 h-24 text-slate-600" />
+                    )}
+                    
+                    {uploading && (
+                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-20">
+                        <ArrowPathIcon className="w-10 h-10 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
                 </div>
+                
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 w-10 h-10 md:w-14 md:h-14 bg-civic-600 hover:bg-civic-500 text-white border-4 md:border-8 border-slate-900 rounded-full z-20 shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-50 group-hover:shadow-civic-500/20"
+                >
+                  <CameraIcon className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+                
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleAvatarChange} 
+                  className="hidden" 
+                  accept="image/*" 
+                />
               </div>
-              
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-2 -right-2 w-10 h-10 bg-civic-500 hover:bg-civic-600 border-4 border-gray-900 rounded-full z-20 shadow-lg flex items-center justify-center text-white transition-all hover:scale-110 disabled:opacity-50"
-              >
-                <CameraIcon className="w-5 h-5" />
-              </button>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleAvatarChange} 
-                className="hidden" 
-                accept="image/*" 
-              />
-            </div>
 
-            <div className="text-center md:text-left">
-              <h1 className="text-4xl font-black text-white tracking-tight mb-2">
-                {profileUser.name}
-              </h1>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                <div className="flex items-center gap-2 text-gray-300 bg-white/5 px-3 py-1.5 rounded-xl backdrop-blur-sm border border-white/10">
-                  <EnvelopeIcon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{profileUser.email}</span>
+              <div className="text-center md:text-left space-y-6 max-w-2xl">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-4">
+                    <span className="bg-civic-500/20 text-civic-400 text-[10px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-civic-500/30 backdrop-blur-md">
+                      {profileUser.role} Dossier
+                    </span>
+                    <span className="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-indigo-500/30 backdrop-blur-md">
+                      Verified Operative
+                    </span>
+                  </div>
+                  <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-white tracking-tighter leading-none">
+                    {profileUser.name}
+                  </h1>
                 </div>
-                <div className="flex items-center gap-2 text-civic-300 bg-civic-400/10 px-3 py-1.5 rounded-xl backdrop-blur-sm border border-civic-400/20">
-                  <ShieldCheckIcon className="w-4 h-4" />
-                  <span className="text-sm font-bold uppercase tracking-wider">{profileUser.role} Account</span>
+
+                <div className="flex flex-wrap justify-center md:justify-start gap-6">
+                  <div className="flex items-center gap-4 text-slate-400 group">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:text-civic-400 transition-colors">
+                      <EnvelopeIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest leading-none mb-1">Secure Channel</p>
+                        <p className="text-sm font-bold text-slate-200">{profileUser.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-slate-400 group">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:text-indigo-400 transition-colors">
+                      <IdentificationIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest leading-none mb-1">Operator ID</p>
+                        <p className="text-sm font-bold text-slate-200">#CF-{profileUser._id.substring(18).toUpperCase()}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,53 +214,65 @@ const Profile = () => {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {statCards.map((stat, i) => (
-            <div key={i} className="card p-6 flex items-center gap-4 group hover:scale-[1.02] transition-all">
-              <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shrink-0`}>
-                <stat.icon className="w-8 h-8" />
+            <div key={i} className={`glass-card p-6 md:p-8 flex flex-col gap-6 group hover:scale-[1.03] transition-all duration-300 border-b-4 ${stat.border} shadow-2xl shadow-slate-200/5 dark:shadow-none`}>
+              <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
+                <stat.icon className="w-7 h-7" />
               </div>
               <div>
-                <div className={`text-3xl font-black ${stat.color} leading-none mb-1`}>{stat.val}</div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{stat.label}</div>
+                <div className={`text-3xl md:text-5xl font-bold ${stat.color} tracking-tighter leading-none mb-1 md:mb-2`}>{stat.val}</div>
+                <div className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">{stat.label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Reports Section */}
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">My Issues History</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">A timeline of every report you've contributed to CivicFix.</p>
-          </div>
-          <div className="text-sm font-bold text-civic-600 bg-civic-50 dark:bg-civic-900/30 px-4 py-2 rounded-xl border border-civic-100 dark:border-civic-900/50">
-            {issues.length} Total Contributions
-          </div>
-        </div>
-
-        {issues.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-fade-in">
-            {issues.map(issue => (
-              <IssueCard 
-                key={issue._id} 
-                issue={issue} 
-                onStatusUpdate={handleUpdateIssue}
-                onDelete={handleDeleteIssue}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="card p-24 text-center border-dashed border-2 bg-transparent">
-            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheckIcon className="w-10 h-10 text-gray-300" />
+        <div className="space-y-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tighter">Operational <span className="text-gradient">History</span></h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-lg leading-tight">Complete ledger of your community intelligence contributions.</p>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No reports yet</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-              You haven't reported any civic issues yet. Start participating to help improve your neighborhood!
-            </p>
+            <div className="flex items-center gap-4 px-8 h-12 glass-card rounded-2xl border-slate-200 dark:border-slate-800 shadow-lg">
+               <ShieldCheckIcon className="w-5 h-5 text-civic-500" />
+               <span className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">
+                {issues.length} Intel Reports
+               </span>
+            </div>
           </div>
-        )}
+
+          {issues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {issues.map((issue, idx) => (
+                <div key={issue._id} className="animate-slide-up" style={{ animationDelay: `${idx * 0.1}s` }}>
+                  <IssueCard 
+                    issue={issue} 
+                    onStatusUpdate={handleUpdateIssue}
+                    onDelete={handleDeleteIssue}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="glass-card p-24 text-center border-dashed border-2 border-slate-200 dark:border-slate-800 bg-transparent flex flex-col items-center gap-8 animate-scale-in">
+              <div className="w-24 h-24 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-inner">
+                <ShieldCheckIcon className="w-12 h-12 text-slate-300" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight uppercase">No Signals Tracked</h3>
+                <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
+                  Your operative history is empty. Deploy to the dashboard to report your first community signal.
+                </p>
+              </div>
+              <Link to="/dashboard" className="btn-primary !h-14 !px-10 flex items-center gap-3 group">
+                 <span className="font-bold text-xs uppercase tracking-widest">Deploy to Field</span>
+                 <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
