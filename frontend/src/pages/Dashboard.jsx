@@ -75,10 +75,10 @@ const Dashboard = () => {
 
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const stats = isAdmin ? [
-    { label: 'Pending', val: statusCounts.Pending, color: 'text-yellow-600' },
-    { label: 'In Progress', val: statusCounts['In Progress'], color: 'text-blue-600' },
-    { label: 'Resolved', val: statusCounts.Resolved, color: 'text-green-600' },
-    { label: 'Rejected', val: statusCounts.Rejected, color: 'text-red-600' },
+    { label: 'Pending', val: statusCounts.Pending || 0, color: 'text-yellow-600' },
+    { label: 'In Progress', val: statusCounts['In Progress'] || 0, color: 'text-blue-600' },
+    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-600' },
+    { label: 'Rejected', val: statusCounts.Rejected || 0, color: 'text-red-600' },
   ] : [
     { label: 'Total Reports', val: totalIssues, color: 'text-civic-600' },
     { label: 'Displaying', val: issues.length, color: 'text-indigo-600' },
@@ -108,7 +108,7 @@ const Dashboard = () => {
                   <UserCircleIcon className="w-10 h-10 text-white" />
                 </div>
                 <div>
-                  <p className="text-civic-100 text-sm font-medium">{isAdmin ? 'Authority Control Center' : 'Citizen Dashboard'}</p>
+                  <p className="text-civic-100 text-sm font-medium">{isAdmin ? 'Authority Control Center' : 'Civic Dashboard'}</p>
                   <h1 className="text-3xl font-bold text-white tracking-tight">{user?.name || 'Citizen'}</h1>
                   <p className="text-civic-200 text-sm">
                     {user?.email}

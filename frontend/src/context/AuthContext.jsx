@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
 
@@ -13,8 +14,22 @@ export const AuthProvider = ({ children }) => {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      // Always refresh user data from DB to get latest role
+      axios.get('/api/auth/me', {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      }).then(({ data }) => {
+        setUser(data);
+        localStorage.setItem('civicfix_user', JSON.stringify(data));
+      }).catch(() => {
+        // Token invalid — log out
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('civicfix_token');
+        localStorage.removeItem('civicfix_user');
+      }).finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (userData, jwtToken) => {

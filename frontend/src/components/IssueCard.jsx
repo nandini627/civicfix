@@ -13,6 +13,7 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
     'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     'In Progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     'Resolved': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+    'Completed': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
     'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
   };
 
@@ -23,7 +24,7 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
     'Critical': 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-100 dark:border-red-900/30',
   };
 
-  const statusOptions = ['Pending', 'In Progress', 'Resolved', 'Rejected'];
+  const statusOptions = ['Pending', 'In Progress', 'Completed', 'Rejected'];
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === issue.status) return;
@@ -188,11 +189,13 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
         )}
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
-            <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
-            <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
-          </div>
-          <div className="flex flex-col items-end gap-1 text-[10px] text-gray-400 font-medium shrink-0">
+          {!isAdmin && (
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 overflow-hidden">
+              <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
+              <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
+            </div>
+          )}
+          <div className={`flex flex-col items-end gap-1 text-[10px] text-gray-400 font-medium shrink-0 ${isAdmin ? 'ml-auto' : ''}`}>
             <div className="flex items-center gap-1.5">
               <CalendarIcon className="w-3 h-3" />
               {formatDate(issue.createdAt)}
