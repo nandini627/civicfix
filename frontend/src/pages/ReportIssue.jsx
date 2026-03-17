@@ -11,8 +11,10 @@ import {
   PhotoIcon,
   XMarkIcon,
   ChevronLeftIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
+import LocationPicker from '../components/LocationPicker';
 
 const InputWrapper = ({ label, name, type = 'text', icon: Icon, value, onChange, errors, placeholder, isTextArea = false }) => (
   <div className="space-y-2">
@@ -70,6 +72,7 @@ const ReportIssue = () => {
   }, [user, navigate]);
 
   const [form, setForm] = useState({ title: '', description: '', location: '', category: 'Pothole' });
+  const [coordinates, setCoordinates] = useState(null);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
@@ -84,6 +87,7 @@ const ReportIssue = () => {
     if (!form.description.trim()) errs.description = 'Description is required';
     else if (form.description.trim().length < 10) errs.description = 'Description must be at least 10 characters';
     if (!form.location.trim()) errs.location = 'Location is required';
+    if (!coordinates) errs.coordinates = 'Please select a location on the map';
     return errs;
   };
 
@@ -129,6 +133,10 @@ const ReportIssue = () => {
       formData.append('description', form.description.trim());
       formData.append('location', form.location.trim());
       formData.append('category', form.category);
+      if (coordinates) {
+        formData.append('lat', coordinates.lat);
+        formData.append('lng', coordinates.lng);
+      }
       if (image) formData.append('image', image);
 
       await axios.post('/api/issues', formData, {
@@ -215,14 +223,27 @@ const ReportIssue = () => {
                     />
                   </div>
 
+                  <div className="md:col-span-2 space-y-4">
+                    <label className="block text-xs font-bold uppercase tracking-[0.15em] text-slate-400 px-1">
+                      Pin Precise Location
+                    </label>
+                    <LocationPicker onLocationSelect={setCoordinates} />
+                    {errors.coordinates && (
+                      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-rose-500 px-1">
+                        <ExclamationCircleIcon className="w-3.5 h-3.5" />
+                        {errors.coordinates}
+                      </p>
+                    )}
+                  </div>
+
                   <InputWrapper
-                    label="Problem Location"
+                    label="Physical Address / Landmark"
                     name="location"
                     icon={MapPinIcon}
                     value={form.location}
                     onChange={handleChange}
                     errors={errors}
-                    placeholder="Physical address or landmark"
+                    placeholder="e.g., Near City Library, Main Road"
                   />
 
                   <div className="space-y-2">

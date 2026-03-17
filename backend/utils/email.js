@@ -31,7 +31,7 @@ const sendStatusUpdateEmail = async (userEmail, userName, issueTitle, newStatus)
             <p>Thank you for helping us make our city better! You can track the progress and see more details in your dashboard.</p>
             
             <div style="text-align: center; margin-top: 30px;">
-              <a href="http://localhost:5173/dashboard" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View My Dashboard</a>
+              <a href="${process.env.APP_URL || 'http://localhost:5173'}/dashboard" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View My Dashboard</a>
             </div>
             
             <p style="margin-top: 30px; font-size: 12px; color: #9ca3af;">This is an automated message from CivicFix. Please do not reply to this email.</p>

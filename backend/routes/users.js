@@ -47,7 +47,7 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
-    if (req.file) updateData.avatar = req.file.path;
+    if (req.file) updateData.avatar = `/${req.file.path.replace(/\\/g, '/')}`;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,

@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 console.log('>>> SERVER.JS STARTING - VERSION 2.1 <<<');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -13,10 +14,11 @@ const app = express();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: 'http://localhost:5173',  // Vite dev server
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   credentials: true,
 }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -32,14 +34,28 @@ app.use('/api/auth', authRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/users', userRoutes);
 
+// ─── Production Setup ────────────────────────────────────────────────────────
+const frontendPath = path.join(__dirname, '../frontend/dist');
+if (require('fs').existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api')) return next();
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+  console.log('Serving frontend from:', frontendPath);
+}
+
 // ─── Health check ─────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ message: 'CivicFix API is running 🚀' });
 });
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ message: `Route ${req.originalUrl} not found` });
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ message: `Route ${req.originalUrl} not found` });
+  }
+  next();
 });
 
 // ─── Global error handler ─────────────────────────────────────────────────────

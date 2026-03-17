@@ -15,7 +15,8 @@ import {
   XCircleIcon,
   ArrowPathIcon,
   PencilSquareIcon,
-  UserIcon
+  UserIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 
 const statusConfig = {
@@ -103,6 +104,12 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
           <status.icon className={`w-3 h-3 ${updating ? 'animate-spin' : ''}`} />
           {issue.status}
         </div>
+
+        {issue.coordinates?.lat && (
+          <div className="absolute bottom-4 right-4 w-10 h-10 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 dark:border-white/5 z-10 shadow-lg" title="GPS Coordinates Included">
+            <GlobeAltIcon className="w-5 h-5 text-white" />
+          </div>
+        )}
       </div>
 
       <div className="p-5 md:p-6 flex flex-col flex-1 relative z-10">

@@ -13,9 +13,20 @@ import {
   TagIcon,
   ChartPieIcon,
   ListBulletIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import IssueCard from '../components/IssueCard';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for default marker icons in Leaflet with React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
@@ -36,6 +47,7 @@ const Dashboard = () => {
   const [totalIssues, setTotalIssues] = useState(0);
   const [statusCounts, setStatusCounts] = useState({ Pending: 0, 'In Progress': 0, Resolved: 0, Completed: 0, Rejected: 0 });
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'map'
 
   useEffect(() => {
     const fetchIssues = async () => {
@@ -81,7 +93,7 @@ const Dashboard = () => {
   const stats = isAdmin ? [
     { label: 'Pending', val: statusCounts.Pending || 0, color: 'text-amber-500', bg: 'bg-amber-500/10' },
     { label: 'In Progress', val: statusCounts['In Progress'] || 0, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-500', bg: 'bg-emerald-510/10' },
+    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { label: 'Rejected', val: statusCounts.Rejected || 0, color: 'text-rose-500', bg: 'bg-rose-500/10' },
   ] : [
     { label: 'Total Active', val: totalIssues, color: 'text-civic-600', bg: 'bg-civic-500/10' },
@@ -213,6 +225,23 @@ const Dashboard = () => {
                   </button>
                 </div>
               )}
+
+              <div className="flex p-1.5 glass-card !rounded-2xl border-slate-200 dark:border-slate-800 h-14 ml-auto">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-4 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg border-none' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+                  title="Grid View"
+                >
+                  <ListBulletIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('map')}
+                  className={`px-4 rounded-xl transition-all ${viewMode === 'map' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg border-none' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+                  title="Map View"
+                >
+                  <GlobeAltIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -267,41 +296,81 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Issues Grid */}
+          {/* Issues Display */}
           {loading ? (
             <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
               <div className="w-12 h-12 border-4 border-civic-500/20 border-t-civic-600 rounded-full animate-spin" />
               <p className="text-slate-400 font-bold text-xs uppercase tracking-widest"> Fetching Reports... </p>
             </div>
-          ) : filteredIssues.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
-              {filteredIssues.map((issue) => (
-                <IssueCard 
-                  key={issue._id} 
-                  issue={issue} 
-                  onDelete={() => setIssues(issues.filter(i => i._id !== issue._id))}
-                  onStatusUpdate={(updated) => setIssues(issues.map(i => i._id === updated._id ? updated : i))}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="card-premium min-h-[400px] flex flex-col items-center justify-center text-center p-12">
-              <div className="w-24 h-24 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-8">
-                <ExclamationCircleIcon className="w-12 h-12 text-slate-300" />
+          ) : viewMode === 'grid' ? (
+            filteredIssues.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
+                {filteredIssues.map((issue) => (
+                  <IssueCard 
+                    key={issue._id} 
+                    issue={issue} 
+                    onDelete={handleDeleteIssue}
+                    onStatusUpdate={handleUpdateIssue}
+                  />
+                ))}
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight"> No reports found </h3>
-              <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 font-medium"> We couldn't find any issues matching your current filters. Try adjusting your search or filters. </p>
-              <button 
-                onClick={() => {
-                  setFilterStatus('All');
-                  setFilterPriority('All');
-                  setFilterCategory('All');
-                  setSearchTerm('');
-                }}
-                className="btn-secondary"
+            ) : (
+              <div className="card-premium min-h-[400px] flex flex-col items-center justify-center text-center p-12">
+                <div className="w-24 h-24 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-8">
+                  <ExclamationCircleIcon className="w-12 h-12 text-slate-300" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight"> No reports found </h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 font-medium"> We couldn't find any issues matching your current filters. Try adjusting your search or filters. </p>
+                <button 
+                  onClick={() => {
+                    setFilterStatus('All');
+                    setFilterPriority('All');
+                    setFilterCategory('All');
+                    setSearchTerm('');
+                  }}
+                  className="btn-secondary"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            )
+          ) : (
+            /* Map View */
+            <div className="h-[600px] w-full rounded-3xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-2xl z-0 relative">
+               <MapContainer
+                center={issues.find(i => i.coordinates?.lat)?.coordinates || [20.5937, 78.9629]}
+                zoom={issues.some(i => i.coordinates?.lat) ? 12 : 5}
+                scrollWheelZoom={true}
+                className="h-full w-full"
               >
-                Clear all filters
-              </button>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {issues.map(issue => issue.coordinates?.lat && (
+                  <Marker 
+                    key={issue._id} 
+                    position={[issue.coordinates.lat, issue.coordinates.lng]}
+                  >
+                    <Popup className="premium-popup">
+                       <div className="p-2 min-w-[200px] space-y-3">
+                         <div className="flex items-center gap-2">
+                           <span className={`w-2 h-2 rounded-full ${issue.status === 'Resolved' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{issue.status}</span>
+                         </div>
+                         <h4 className="font-bold text-slate-900 line-clamp-1">{issue.title}</h4>
+                         <p className="text-xs text-slate-500 line-clamp-2">{issue.description}</p>
+                         <button 
+                           onClick={() => navigate(`/issues/${issue._id}`)}
+                           className="w-full py-2 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-civic-600 transition-colors"
+                         >
+                           View Dossier
+                         </button>
+                       </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
             </div>
           )}
 

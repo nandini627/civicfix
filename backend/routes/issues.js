@@ -10,7 +10,7 @@ const router = express.Router();
 // Report a new civic issue
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const { title, description, location, category } = req.body;
+    const { title, description, location, category, lat, lng } = req.body;
 
     if (!title || !description || !location) {
       return res.status(400).json({ message: 'Title, description, and location are required.' });
@@ -22,7 +22,8 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       location,
       category: category || 'Other',
       reportedBy: req.user._id,
-      imageUrl: req.file ? req.file.path : '',
+      imageUrl: req.file ? `/${req.file.path.replace(/\\/g, '/')}` : '',
+      coordinates: (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : undefined
     });
 
     const savedIssue = await newIssue.save();
@@ -146,10 +147,16 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     if (description) updateData.description = description;
     if (location) updateData.location = location;
     if (category) updateData.category = category;
+    if (req.body.lat && req.body.lng) {
+      updateData.coordinates = {
+        lat: parseFloat(req.body.lat),
+        lng: parseFloat(req.body.lng)
+      };
+    }
     
     // Allow admin to update main issue image
     if (isAdmin && req.file && req.body.updateMainImage === 'true') {
-      updateData.imageUrl = req.file.path;
+      updateData.imageUrl = `/${req.file.path.replace(/\\/g, '/')}`;
     }
     
     // Official Response logic (Admin only)
@@ -168,7 +175,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
       responseData.text = officialResponse || (issue.officialResponse?.text || '');
       
       // If new photo provided, update it. If not, keep old (if exists).
-      responseData.imageUrl = req.file ? req.file.path : (issue.officialResponse?.imageUrl || '');
+      responseData.imageUrl = req.file ? `/${req.file.path.replace(/\\/g, '/')}` : (issue.officialResponse?.imageUrl || '');
       
       updateData.officialResponse = responseData;
     }
@@ -240,7 +247,7 @@ router.post('/:id/replies', auth, upload.single('image'), async (req, res) => {
       message: message || '',
       sender: req.user._id,
       senderRole: req.user.role || 'citizen',
-      imageUrl: req.file ? req.file.path : '',
+      imageUrl: req.file ? `/${req.file.path.replace(/\\/g, '/')}` : '',
       createdAt: new Date(),
     };
 
@@ -287,7 +294,7 @@ router.patch('/:id/status', auth, upload.single('image'), async (req, res) => {
         message: message || (status ? `Status updated to ${status}` : ''),
         sender: req.user._id,
         senderRole: 'admin',
-        imageUrl: req.file ? req.file.path : '',
+        imageUrl: req.file ? `/${req.file.path.replace(/\\/g, '/')}` : '',
         createdAt: new Date(),
       };
       issue.replies.push(reply);

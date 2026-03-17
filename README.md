@@ -136,6 +136,37 @@ The UI is fully responsive and works across:
 
 ---
 
+## 🛠 Deployment & Local Setup
+
+### 1. Unified Installation
+From the root directory, install all dependencies for both frontend and backend:
+```bash
+npm run install:all
+```
+
+### 2. Environment Configuration
+Create a `.env` file in the `backend/` folder with the following variables:
+* `PORT`: Server port (default 5000)
+* `MONGO_URI`: MongoDB connection string
+* `JWT_SECRET`: Secret key for tokens
+* `CLOUDINARY_*`: Cloudinary credentials (optional, falls back to local storage)
+* `EMAIL_*`: SMTP settings for sending update emails
+
+### 3. Running for Development
+Run both frontend and backend concurrently:
+```bash
+npm run dev
+```
+
+### 4. Production Build & Start
+To build the frontend and start the production server:
+```bash
+npm run build:frontend
+npm start
+```
+
+---
+
 ## 👨‍💻 Author
 
 Developed as part of a **Full Stack Hackathon Project**.

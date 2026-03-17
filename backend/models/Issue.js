@@ -14,6 +14,10 @@ const issueSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  coordinates: {
+    lat: { type: Number },
+    lng: { type: Number }
+  },
   category: {
     type: String,
     enum: ['Pothole', 'Garbage', 'Street Light', 'Water Leak', 'Broken Sidewalk', 'Park Maintenance', 'Other'],

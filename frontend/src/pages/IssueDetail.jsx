@@ -17,8 +17,19 @@ import {
   XMarkIcon,
   PaperAirplaneIcon,
   PhotoIcon,
-  ClockIcon
+  ClockIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for default marker icons in Leaflet with React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const IssueDetail = () => {
   const { id } = useParams();
@@ -450,9 +461,27 @@ const IssueDetail = () => {
                   <div className="w-12 h-12 rounded-2xl bg-civic-500/10 flex items-center justify-center shrink-0 border border-civic-500/20 shadow-lg shadow-civic-500/5">
                     <MapPinIcon className="w-6 h-6 text-civic-500" />
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Geo Location</p>
-                    <p className="font-bold text-slate-900 dark:text-white leading-tight">{issue.location || 'Undisclosed'}</p>
+                  <div className="space-y-3 flex-1">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Geo Location</p>
+                      <p className="font-bold text-slate-900 dark:text-white leading-tight">{issue.location || 'Undisclosed'}</p>
+                    </div>
+                    {issue.coordinates && issue.coordinates.lat && issue.coordinates.lng && (
+                      <div className="h-48 w-full rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-inner z-0 mt-4">
+                        <MapContainer
+                          center={[issue.coordinates.lat, issue.coordinates.lng]}
+                          zoom={14}
+                          scrollWheelZoom={false}
+                          className="h-full w-full"
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <Marker position={[issue.coordinates.lat, issue.coordinates.lng]} />
+                        </MapContainer>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -547,6 +576,48 @@ const IssueDetail = () => {
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Visual Asset Update</p>
+                      <div className="flex flex-col gap-4">
+                        <label className="flex items-center justify-center gap-3 px-6 h-12 bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer hover:bg-civic-500/5 hover:border-civic-500/50 transition-all group">
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                setAdminPhoto(file);
+                                setPhotoPreview(URL.createObjectURL(file));
+                                setUpdateMainImage(true);
+                              }
+                            }} 
+                          />
+                          <PhotoIcon className="w-5 h-5 text-slate-400 group-hover:text-civic-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-civic-500">
+                            {adminPhoto ? adminPhoto.name : 'Update Main Image'}
+                          </span>
+                        </label>
+                        
+                        {photoPreview && (
+                          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950">
+                            <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setAdminPhoto(null);
+                                setPhotoPreview(null);
+                                setUpdateMainImage(false);
+                              }}
+                              className="absolute top-2 right-2 w-8 h-8 bg-rose-500/80 hover:bg-rose-500 text-white rounded-lg flex items-center justify-center backdrop-blur-sm transition-all shadow-lg"
+                            >
+                              <XMarkIcon className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
