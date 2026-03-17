@@ -549,6 +549,48 @@ const IssueDetail = () => {
                         </select>
                       </div>
                     </div>
+
+                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Visual Asset Update</p>
+                      <div className="flex flex-col gap-4">
+                        <label className="flex items-center justify-center gap-3 px-6 h-12 bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer hover:bg-civic-500/5 hover:border-civic-500/50 transition-all group">
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                setAdminPhoto(file);
+                                setPhotoPreview(URL.createObjectURL(file));
+                                setUpdateMainImage(true);
+                              }
+                            }} 
+                          />
+                          <PhotoIcon className="w-5 h-5 text-slate-400 group-hover:text-civic-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-civic-500">
+                            {adminPhoto ? adminPhoto.name : 'Update Main Image'}
+                          </span>
+                        </label>
+                        
+                        {photoPreview && (
+                          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950">
+                            <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setAdminPhoto(null);
+                                setPhotoPreview(null);
+                                setUpdateMainImage(false);
+                              }}
+                              className="absolute top-2 right-2 w-8 h-8 bg-rose-500/80 hover:bg-rose-500 text-white rounded-lg flex items-center justify-center backdrop-blur-sm transition-all shadow-lg"
+                            >
+                              <XMarkIcon className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
                   <button

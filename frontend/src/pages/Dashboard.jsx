@@ -81,7 +81,7 @@ const Dashboard = () => {
   const stats = isAdmin ? [
     { label: 'Pending', val: statusCounts.Pending || 0, color: 'text-amber-500', bg: 'bg-amber-500/10' },
     { label: 'In Progress', val: statusCounts['In Progress'] || 0, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-500', bg: 'bg-emerald-510/10' },
+    { label: 'Completed', val: (statusCounts.Completed || 0) + (statusCounts.Resolved || 0), color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { label: 'Rejected', val: statusCounts.Rejected || 0, color: 'text-rose-500', bg: 'bg-rose-500/10' },
   ] : [
     { label: 'Total Active', val: totalIssues, color: 'text-civic-600', bg: 'bg-civic-500/10' },
