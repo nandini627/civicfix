@@ -101,7 +101,9 @@ router.get('/', async (req, res) => {
 // Get a single civic issue by ID
 router.get('/:id', async (req, res) => {
   try {
-    const issue = await Issue.findById(req.params.id).populate('reportedBy', 'name email');
+    const issue = await Issue.findById(req.params.id)
+      .populate('reportedBy', 'name email avatar')
+      .populate('replies.sender', 'name avatar role');
     
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found.' });
@@ -129,7 +131,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     const issue = await Issue.findById(id);
     if (!issue) return res.status(404).json({ message: 'Issue not found.' });
 
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role?.toLowerCase() === 'admin';
     const isReporter = issue.reportedBy.toString() === req.user._id.toString();
 
     // Permissions: Admins can update anything. Reporters can update title/description (if still pending).
@@ -175,7 +177,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
       id,
       { $set: updateData },
       { new: true }
-    ).populate('reportedBy', 'name email').populate('officialResponse.respondedBy', 'name');
+    ).populate('reportedBy', 'name email avatar').populate('officialResponse.respondedBy', 'name').populate('replies.sender', 'name avatar role');
 
     if (status && isAdmin && updatedIssue.reportedBy?.email) {
       sendStatusUpdateEmail(
@@ -205,7 +207,7 @@ router.delete('/:id', auth, async (req, res) => {
 
     // Check permissions: Admin can delete any issue, Citizens can delete only their own
     const isReporter = issue.reportedBy.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role?.toLowerCase() === 'admin';
 
     if (!isAdmin && !isReporter) {
       return res.status(403).json({ message: 'Access denied. You can only delete your own reports.' });
@@ -216,6 +218,102 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) {
     console.error('Error deleting issue:', err);
     res.status(500).json({ message: 'Server error. Could not delete issue.' });
+  }
+});
+
+
+// ─── POST /api/issues/:id/replies ───────────────────────────────────────────
+// Add a reply to an issue's reply board
+router.post('/:id/replies', auth, upload.single('image'), async (req, res) => {
+  try {
+    const { message } = req.body;
+    const { id } = req.params;
+
+    if (!message && !req.file) {
+      return res.status(400).json({ message: 'Reply must contain text or an image.' });
+    }
+
+    const issue = await Issue.findById(id);
+    if (!issue) return res.status(404).json({ message: 'Issue not found.' });
+
+    const reply = {
+      message: message || '',
+      sender: req.user._id,
+      senderRole: req.user.role || 'citizen',
+      imageUrl: req.file ? req.file.path : '',
+      createdAt: new Date(),
+    };
+
+    issue.replies.push(reply);
+    await issue.save();
+
+    const updatedIssue = await Issue.findById(id)
+      .populate('reportedBy', 'name email avatar')
+      .populate('replies.sender', 'name avatar role');
+
+    res.status(201).json(updatedIssue);
+  } catch (err) {
+    console.error('Error adding reply:', err);
+    res.status(500).json({ message: 'Server error. Could not add reply.' });
+  }
+});
+
+// ─── PATCH /api/issues/:id/status ───────────────────────────────────────────
+// Admin update status, send reply, and optional email
+router.patch('/:id/status', auth, upload.single('image'), async (req, res) => {
+  try {
+    const { status, message, sendEmail } = req.body;
+    const { id } = req.params;
+
+    const isAdmin = req.user.role?.toLowerCase() === 'admin';
+    if (!isAdmin) {
+      return res.status(403).json({ message: 'Access denied. Only admins can update status.' });
+    }
+
+    const issue = await Issue.findById(id).populate('reportedBy', 'name email');
+    if (!issue) return res.status(404).json({ message: 'Issue not found.' });
+
+    if (status) {
+      // Validate mandatory reason for rejection
+      if (status === 'Rejected' && !message) {
+         return res.status(400).json({ message: 'A reason is required when rejecting an issue.' });
+      }
+      issue.status = status;
+    }
+
+    let replyAdded = false;
+    if (message || req.file) {
+      const reply = {
+        message: message || (status ? `Status updated to ${status}` : ''),
+        sender: req.user._id,
+        senderRole: 'admin',
+        imageUrl: req.file ? req.file.path : '',
+        createdAt: new Date(),
+      };
+      issue.replies.push(reply);
+      replyAdded = true;
+    }
+
+    await issue.save();
+
+    // Send email logic if requested
+    if (sendEmail === 'true' && issue.reportedBy && issue.reportedBy.email && status) {
+      sendStatusUpdateEmail(
+        issue.reportedBy.email,
+        issue.reportedBy.name,
+        issue.title,
+        status
+      );
+    }
+
+    const updatedIssue = await Issue.findById(id)
+      .populate('reportedBy', 'name email avatar')
+      .populate('replies.sender', 'name avatar role');
+
+    res.status(200).json(updatedIssue);
+  } catch (err) {
+    console.error('Error in status patch:', err);
+    res.status(500).json({ message: 'Server error. Could not update issue.' });
   }
 });
 

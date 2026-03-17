@@ -38,6 +38,15 @@ const issueSchema = new mongoose.Schema({
     enum: ['Low', 'Medium', 'High', 'Critical'],
     default: 'Low',
   },
+  replies: [
+    {
+      message: { type: String, required: true },
+      sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      senderRole: { type: String, default: 'admin' },
+      imageUrl: { type: String, default: '' },
+      createdAt: { type: Date, default: Date.now },
+    }
+  ],
   officialResponse: {
     text: { type: String, default: '' },
     respondedAt: { type: Date },

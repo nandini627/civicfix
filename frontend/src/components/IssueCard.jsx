@@ -70,7 +70,7 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
     });
   };
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
   const isReporter = user?.id === issue.reportedBy?._id || user?._id === issue.reportedBy?._id || user?.id === issue.reportedBy;
 
   return (

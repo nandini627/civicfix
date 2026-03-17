@@ -41,7 +41,9 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>
-                <NavLink to="/report-issue" className={linkClass}>Report Issue</NavLink>
+                {user?.role?.toLowerCase() !== 'admin' && (
+                  <NavLink to="/report-issue" className={linkClass}>Report Issue</NavLink>
+                )}
                 <NavLink 
                   to="/profile" 
                   className={({ isActive }) => 

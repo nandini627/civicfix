@@ -73,7 +73,7 @@ const Dashboard = () => {
            issue.description.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
   const stats = isAdmin ? [
     { label: 'Pending', val: statusCounts.Pending, color: 'text-yellow-600' },
     { label: 'In Progress', val: statusCounts['In Progress'], color: 'text-blue-600' },
@@ -103,24 +103,29 @@ const Dashboard = () => {
         <div className="card p-8 mb-8 bg-gradient-to-br from-civic-600 to-indigo-600 border-0 shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <UserCircleIcon className="w-10 h-10 text-white" />
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <UserCircleIcon className="w-10 h-10 text-white" />
+                </div>
+                <div>
+                  <p className="text-civic-100 text-sm font-medium">{isAdmin ? 'Authority Control Center' : 'Citizen Dashboard'}</p>
+                  <h1 className="text-3xl font-bold text-white tracking-tight">{user?.name || 'Citizen'}</h1>
+                  <p className="text-civic-200 text-sm">
+                    {user?.email}
+                    {isAdmin && <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold tracking-widest">Admin</span>}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-civic-100 text-sm font-medium">{isAdmin ? 'Authority Control Center' : 'Citizen Dashboard'}</p>
-                <h1 className="text-3xl font-bold text-white tracking-tight">{user?.name || 'Citizen'}</h1>
-                <p className="text-civic-200 text-sm">{user?.email}{user?.role === 'admin' && <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-[10px] uppercase font-bold tracking-widest tracking-tighter">Admin</span>}</p>
-              </div>
-            </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/report-issue')}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-civic-600 hover:bg-civic-50 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
-              >
-                <PlusIcon className="w-5 h-5" />
-                Report New Issue
-              </button>
+              {!isAdmin && (
+                <button
+                  onClick={() => navigate('/report-issue')}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-civic-600 hover:bg-civic-50 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Report New Issue
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all backdrop-blur-sm"
@@ -133,7 +138,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className={`grid gap-6 mb-8 ${isAdmin ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
           {stats.map((stat, i) => (
             <div key={i} className="card p-6 flex flex-col items-center text-center">
               <div className={`text-3xl font-extrabold ${stat.color} dark:brightness-125 mb-1`}>{stat.val}</div>
@@ -197,6 +202,7 @@ const Dashboard = () => {
                   <option value="Pending">Pending</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
+                  <option value="Rejected">Rejected</option>
                 </select>
               </div>
 

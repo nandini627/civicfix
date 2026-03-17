@@ -57,9 +57,15 @@ const InputWrapper = ({ label, name, type = 'text', icon: Icon, value, onChange,
 );
 
 const ReportIssue = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (user?.role?.toLowerCase() === 'admin') {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const [form, setForm] = useState({ title: '', description: '', location: '', category: 'Other' });
   const [image, setImage] = useState(null);
