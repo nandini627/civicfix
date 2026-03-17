@@ -177,9 +177,12 @@ const IssueCard = ({ issue, onStatusUpdate, onDelete }) => {
             <UserIcon className="w-4 h-4 text-civic-500 shrink-0" />
             <span className="truncate">By <span className="font-semibold text-gray-700 dark:text-gray-200">{issue.reportedBy?.name || 'Anonymous'}</span></span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 shrink-0">
-            <CalendarIcon className="w-4 h-4" />
-            {formatDate(issue.createdAt)}
+          <div className="flex flex-col items-end gap-1 text-[10px] text-gray-400 font-medium shrink-0">
+            <div className="flex items-center gap-1.5">
+              <CalendarIcon className="w-3 h-3" />
+              {formatDate(issue.createdAt)}
+            </div>
+            <span>Updated {formatDate(issue.updatedAt || issue.createdAt)}</span>
           </div>
         </div>
       </div>

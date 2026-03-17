@@ -38,10 +38,11 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
-    const { status, unresponded } = req.query;
+    const { status, unresponded, reportedBy } = req.query;
 
     const query = {};
     if (status && status !== 'All') query.status = status;
+    if (reportedBy) query.reportedBy = reportedBy;
     if (unresponded === 'true') {
       query.$or = [
         { officialResponse: { $exists: false } },

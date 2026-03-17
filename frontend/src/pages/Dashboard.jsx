@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
+  const [filterScope, setFilterScope] = useState('All'); // 'All' or 'Mine'
   
   // Pagination State
   const [page, setPage] = useState(1);
@@ -38,6 +39,7 @@ const Dashboard = () => {
         let url = `/api/issues?page=${page}&limit=6&status=${filterStatus}`;
         if (filterPriority !== 'All') url += `&priority=${filterPriority}`;
         if (showUnresponded) url += '&unresponded=true';
+        if (filterScope === 'Mine') url += `&reportedBy=${user?._id || user?.id}`;
         
         const { data } = await axios.get(url);
         setIssues(data.issues);
@@ -51,7 +53,7 @@ const Dashboard = () => {
       }
     };
     fetchIssues();
-  }, [page, filterStatus, filterPriority, showUnresponded]);
+  }, [page, filterStatus, filterPriority, showUnresponded, filterScope]);
 
   useEffect(() => {
     setPage(1);
@@ -137,13 +139,33 @@ const Dashboard = () => {
         </div>
 
         {/* Main Feed Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            Civic Issues Feed
-            <span className="text-sm font-normal text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
-              {filteredIssues.length} on this page
-            </span>
-          </h2>
+        <div className="flex flex-col space-y-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              {isAdmin ? 'City-wide Issue Management' : (filterScope === 'Mine' ? 'My Reported Issues' : 'Civic Issues Feed')}
+              <span className="text-sm font-normal text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
+                {totalIssues} total
+              </span>
+            </h2>
+
+            {/* View Toggle for Citizens */}
+            {!isAdmin && (
+              <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-800">
+                <button
+                  onClick={() => setFilterScope('All')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filterScope === 'All' ? 'bg-white dark:bg-gray-800 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Global Feed
+                </button>
+                <button
+                  onClick={() => setFilterScope('Mine')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filterScope === 'Mine' ? 'bg-white dark:bg-gray-800 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  My Reports
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-2xl">
             {/* Search */}

@@ -60,7 +60,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const nameRef = useRef(null);
 
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'citizen' });
   const [errors, setErrors] = useState({});
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -106,6 +106,7 @@ const Signup = () => {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
+        role: form.role,
       });
       console.log('Signup success. Updating auth state...');
       await login(data.user, data.token);
@@ -191,6 +192,39 @@ const Signup = () => {
               placeholder="Re-enter your password"
               rightIcon={{ toggle: () => setShowConfirm(p => !p), show: showConfirm }}
             />
+
+            {/* Role Selection */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                I am signing up as:
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, role: 'citizen' }))}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    form.role === 'citizen'
+                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
+                      : 'bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
+                  }`}
+                >
+                  <UserIcon className={`w-6 h-6 ${form.role === 'citizen' ? 'text-civic-600' : 'text-gray-400'}`} />
+                  <span className="text-sm font-bold">Citizen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, role: 'admin' }))}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    form.role === 'admin'
+                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
+                      : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
+                  }`}
+                >
+                  <ShieldCheckIcon className={`w-6 h-6 ${form.role === 'admin' ? 'text-civic-600' : 'text-gray-400'}`} />
+                  <span className="text-sm font-bold">Authority</span>
+                </button>
+              </div>
+            </div>
 
             <button
               type="submit"

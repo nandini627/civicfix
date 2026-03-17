@@ -265,6 +265,16 @@ const IssueDetail = () => {
                     <p className="font-semibold text-gray-900 dark:text-white">{formatDate(issue.createdAt)}</p>
                   </div>
                 </div>
+
+                <div className="flex items-start gap-4 text-gray-600 dark:text-gray-400">
+                  <div className="p-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl shrink-0">
+                    <ArrowPathIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Last Updated</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatDate(issue.updatedAt || issue.createdAt)}</p>
+                  </div>
+                </div>
               </div>
             </div>
 

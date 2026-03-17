@@ -13,7 +13,7 @@ const generateToken = (userId) => {
 // ─── POST /api/auth/signup ────────────────────────────────────────────────────
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Basic input validation
     if (!name || !email || !password) {
@@ -33,7 +33,12 @@ router.post('/signup', async (req, res) => {
     const hashed = await bcrypt.hash(password, 12);
 
     // Create user
-    const user = await User.create({ name, email: email.toLowerCase(), password: hashed });
+    const user = await User.create({ 
+      name, 
+      email: email.toLowerCase(), 
+      password: hashed,
+      role: role === 'admin' ? 'admin' : 'citizen' // Basic validation for role
+    });
 
     // Generate token
     const token = generateToken(user._id);

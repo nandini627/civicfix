@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import {
+  UserIcon,
   EnvelopeIcon,
   LockClosedIcon,
   EyeIcon,
@@ -15,7 +16,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '', role: 'citizen' });
   const [errors, setErrors] = useState({});
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,14 @@ const Login = () => {
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
+
+      // Verification: Does the chosen role match the actual account role?
+      if (data.user.role !== form.role) {
+        setApiError(`This account is registered as a ${data.user.role}, not an ${form.role === 'admin' ? 'Authority' : 'Citizen'}.`);
+        setLoading(false);
+        return;
+      }
+
       await login(data.user, data.token);
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -152,6 +161,39 @@ const Login = () => {
                   {errors.password}
                 </p>
               )}
+            </div>
+
+            {/* Role Selection */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Sign in as:
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, role: 'citizen' }))}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    form.role === 'citizen'
+                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
+                      : 'bg-white dark:bg-gray-950 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
+                  }`}
+                >
+                  <UserIcon className={`w-6 h-6 ${form.role === 'citizen' ? 'text-civic-600' : 'text-gray-400'}`} />
+                  <span className="text-sm font-bold">Citizen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, role: 'admin' }))}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    form.role === 'admin'
+                      ? 'bg-civic-50 dark:bg-civic-900/20 border-civic-500 text-civic-700 dark:text-civic-300'
+                      : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-200'
+                  }`}
+                >
+                  <ShieldCheckIcon className={`w-6 h-6 ${form.role === 'admin' ? 'text-civic-600' : 'text-gray-400'}`} />
+                  <span className="text-sm font-bold">Authority</span>
+                </button>
+              </div>
             </div>
 
             <button
