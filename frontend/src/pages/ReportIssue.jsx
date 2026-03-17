@@ -61,7 +61,7 @@ const ReportIssue = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [form, setForm] = useState({ title: '', description: '', location: '' });
+  const [form, setForm] = useState({ title: '', description: '', location: '', category: 'Other' });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState({});
@@ -78,6 +78,8 @@ const ReportIssue = () => {
     else if (form.description.trim().length < 10) errs.description = 'Description must be at least 10 characters';
 
     if (!form.location.trim()) errs.location = 'Location is required';
+    
+    if (!form.category) errs.category = 'Category is required';
 
     return errs;
   };
@@ -127,6 +129,7 @@ const ReportIssue = () => {
       formData.append('title', form.title.trim());
       formData.append('description', form.description.trim());
       formData.append('location', form.location.trim());
+      formData.append('category', form.category);
       if (image) {
         formData.append('image', image);
       }
@@ -216,8 +219,40 @@ const ReportIssue = () => {
                   value={form.location}
                   onChange={handleChange}
                   errors={errors}
-                  placeholder="e.g., Near City Park, Main Road Intersection"
+                  placeholder="e.g., Near City Park, Intersection of Broadway"
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Issue Category
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                      <TagIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <select
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                      className={`input-field pl-10 appearance-none ${
+                        errors.category ? 'border-red-400 focus:ring-red-400' : ''
+                      }`}
+                    >
+                      <option value="Pothole">Pothole</option>
+                      <option value="Garbage">Garbage / Waste</option>
+                      <option value="Street Light">Street Light Issue</option>
+                      <option value="Water Leak">Water / Sewage Leak</option>
+                      <option value="Broken Sidewalk">Broken Sidewalk</option>
+                      <option value="Park Maintenance">Park Maintenance</option>
+                      <option value="Other">Other Category</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Image Upload Field */}
                 <div>

@@ -12,7 +12,8 @@ import {
   ExclamationCircleIcon,
   EnvelopeIcon,
   ShieldCheckIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 
 const IssueDetail = () => {
@@ -25,14 +26,18 @@ const IssueDetail = () => {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [adminPhoto, setAdminPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [updateMainImage, setUpdateMainImage] = useState(false);
 
   const statusColors = {
     'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     'In Progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     'Resolved': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+    'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
   };
 
-  const statusOptions = ['Pending', 'In Progress', 'Resolved'];
+  const statusOptions = ['Pending', 'In Progress', 'Resolved', 'Rejected'];
   
   const priorityColors = {
     'Low': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border-gray-200 dark:border-gray-800',
@@ -42,6 +47,7 @@ const IssueDetail = () => {
   };
 
   const priorityOptions = ['Low', 'Medium', 'High', 'Critical'];
+  const categoryOptions = ['Pothole', 'Garbage', 'Street Light', 'Water Leak', 'Broken Sidewalk', 'Park Maintenance', 'Other'];
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -62,19 +68,35 @@ const IssueDetail = () => {
   const handleAdminUpdate = async (e) => {
     e.preventDefault();
     setUpdating(true);
+    const formData = new FormData();
+    formData.append('status', issue.status);
+    formData.append('title', issue.title);
+    formData.append('description', issue.description);
+    formData.append('officialResponse', issue.officialResponse?.text || '');
+    formData.append('priority', issue.priority || 'Low');
+    formData.append('location', issue.location || '');
+    formData.append('category', issue.category || 'Other');
+    if (updateMainImage) {
+      formData.append('updateMainImage', 'true');
+    }
+    if (adminPhoto) {
+      formData.append('image', adminPhoto);
+    }
+
     try {
       const { data } = await axios.put(
         `/api/issues/${issue._id}`,
+        formData,
         { 
-          status: issue.status,
-          title: issue.title,
-          description: issue.description,
-          officialResponse: issue.officialResponse?.text || '',
-          priority: issue.priority || 'Low'
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          } 
+        }
       );
       setIssue(data);
+      setAdminPhoto(null);
+      setPhotoPreview(null);
       alert('Issue updated successfully!');
     } catch (err) {
       console.error('Failed to update issue:', err);
@@ -218,9 +240,18 @@ const IssueDetail = () => {
                           </p>
                         </div>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-medium italic">
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-medium italic mb-4">
                         "{issue.officialResponse.text}"
                       </p>
+                      {issue.officialResponse.imageUrl && (
+                        <div className="rounded-xl overflow-hidden shadow-md max-w-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                          <img 
+                            src={issue.officialResponse.imageUrl} 
+                            alt="Resolution Evidence" 
+                            className="w-full h-auto object-cover max-h-[300px]"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -253,6 +284,16 @@ const IssueDetail = () => {
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Reported By</p>
                     <p className="font-semibold text-gray-900 dark:text-white">{issue.reportedBy?.name || 'Anonymous'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 text-gray-600 dark:text-gray-400">
+                  <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl shrink-0">
+                    <TagIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Category</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{issue.category || 'Other'}</p>
                   </div>
                 </div>
 
@@ -307,19 +348,54 @@ const IssueDetail = () => {
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Set Priority</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Location</p>
                     <div className="relative">
-                      <select
-                        value={issue.priority || 'Low'}
-                        onChange={(e) => handleFieldChange('priority', e.target.value)}
-                        className="input-field appearance-none pr-10 font-bold text-sm"
-                      >
-                        {priorityOptions.map(opt => (
-                          <option key={opt} value={opt}>{opt} Priority</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <ChevronLeftIcon className="w-4 h-4 -rotate-90 text-gray-400" />
+                      <MapPinIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={issue.location}
+                        onChange={(e) => handleFieldChange('location', e.target.value)}
+                        className="input-field pl-9 text-sm"
+                        placeholder="Enter location"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-5">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Category</p>
+                      <div className="relative">
+                        <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <select
+                          value={issue.category || 'Other'}
+                          onChange={(e) => handleFieldChange('category', e.target.value)}
+                          className="input-field pl-9 appearance-none font-bold text-sm"
+                        >
+                          {categoryOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronLeftIcon className="w-4 h-4 -rotate-90 text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Set Priority</p>
+                      <div className="relative">
+                        <select
+                          value={issue.priority || 'Low'}
+                          onChange={(e) => handleFieldChange('priority', e.target.value)}
+                          className="input-field appearance-none pr-10 font-bold text-sm"
+                        >
+                          {priorityOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt} Priority</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronLeftIcon className="w-4 h-4 -rotate-90 text-gray-400" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -347,9 +423,63 @@ const IssueDetail = () => {
                     <textarea
                       value={issue.officialResponse?.text || ''}
                       onChange={(e) => handleResponseChange(e.target.value)}
-                      placeholder="Type official response here..."
+                      placeholder={issue.status === 'Rejected' ? "Please provide reason for rejection..." : "Type official response here..."}
                       className="input-field min-h-[120px] text-sm py-3 leading-relaxed"
+                      required={issue.status === 'Rejected'}
                     />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Photo Management</p>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setUpdateMainImage(false)}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${!updateMainImage ? 'bg-white dark:bg-gray-700 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          Response Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUpdateMainImage(true)}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${updateMainImage ? 'bg-white dark:bg-gray-700 text-civic-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                          Change Main Photo
+                        </button>
+                      </div>
+
+                      {photoPreview && (
+                        <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+                          <img src={photoPreview} alt="Update Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button"
+                            onClick={() => { setAdminPhoto(null); setPhotoPreview(null); }}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                      <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:border-civic-500 hover:bg-civic-50/10 transition-all group">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setAdminPhoto(file);
+                              setPhotoPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                        <PencilSquareIcon className="w-5 h-5 text-gray-400 group-hover:text-civic-600" />
+                        <span className="text-sm font-bold text-gray-500 group-hover:text-civic-600">
+                          {updateMainImage ? 'Select New Content Photo' : (photoPreview ? 'Change Response Photo' : 'Attach Response Photo')}
+                        </span>
+                      </label>
+                    </div>
                   </div>
                   
                   <button

@@ -10,7 +10,7 @@ const router = express.Router();
 // Report a new civic issue
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const { title, description, location } = req.body;
+    const { title, description, location, category } = req.body;
 
     if (!title || !description || !location) {
       return res.status(400).json({ message: 'Title, description, and location are required.' });
@@ -20,6 +20,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       title,
       description,
       location,
+      category: category || 'Other',
       reportedBy: req.user._id,
       imageUrl: req.file ? req.file.path : '',
     });
@@ -38,10 +39,12 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
-    const { status, unresponded, reportedBy } = req.query;
+    const { status, unresponded, reportedBy, category, priority } = req.query;
 
     const query = {};
     if (status && status !== 'All') query.status = status;
+    if (category && category !== 'All') query.category = category;
+    if (priority && priority !== 'All') query.priority = priority;
     if (reportedBy) query.reportedBy = reportedBy;
     if (unresponded === 'true') {
       query.$or = [
@@ -66,7 +69,8 @@ router.get('/', async (req, res) => {
     const statusCounts = {
       Pending: 0,
       'In Progress': 0,
-      Resolved: 0
+      Resolved: 0,
+      Rejected: 0
     };
     stats.forEach(s => {
       if (statusCounts.hasOwnProperty(s._id)) {
@@ -116,10 +120,10 @@ router.get('/:id', async (req, res) => {
 // ─── PUT /api/issues/:id/status ───────────────────────────────────────────────
 // Update issue status (Admin only)
 // ─── PUT /api/issues/:id/status ───────────────────────────────────────────────
-// Update issue status (Admin only)
-router.put('/:id', auth, async (req, res) => {
+// Update issue (Admin can update all, Reporter can update title/desc if pending)
+router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
-    const { status, title, description, officialResponse, priority } = req.body;
+    const { status, title, description, location, category, officialResponse, priority } = req.body;
     const { id } = req.params;
 
     const issue = await Issue.findById(id);
@@ -138,13 +142,33 @@ router.put('/:id', auth, async (req, res) => {
     if (priority && isAdmin) updateData.priority = priority;
     if (title) updateData.title = title;
     if (description) updateData.description = description;
+    if (location) updateData.location = location;
+    if (category) updateData.category = category;
     
-    if (officialResponse && isAdmin) {
-      updateData.officialResponse = {
-        text: officialResponse,
+    // Allow admin to update main issue image
+    if (isAdmin && req.file && req.body.updateMainImage === 'true') {
+      updateData.imageUrl = req.file.path;
+    }
+    
+    // Official Response logic (Admin only)
+    if (isAdmin && (officialResponse || (req.file && req.body.updateMainImage !== 'true') || status === 'Rejected')) {
+      // Mandatory reason for rejection
+      if (status === 'Rejected' && !officialResponse && (!issue.officialResponse || !issue.officialResponse.text)) {
+        return res.status(400).json({ message: 'A reason is required when rejecting an issue.' });
+      }
+
+      const responseData = {
         respondedAt: new Date(),
         respondedBy: req.user._id
       };
+      
+      // If new text provided, update it. If not, keep old (if exists) or empty.
+      responseData.text = officialResponse || (issue.officialResponse?.text || '');
+      
+      // If new photo provided, update it. If not, keep old (if exists).
+      responseData.imageUrl = req.file ? req.file.path : (issue.officialResponse?.imageUrl || '');
+      
+      updateData.officialResponse = responseData;
     }
 
     const updatedIssue = await Issue.findByIdAndUpdate(

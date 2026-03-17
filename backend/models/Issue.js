@@ -14,6 +14,11 @@ const issueSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  category: {
+    type: String,
+    enum: ['Pothole', 'Garbage', 'Street Light', 'Water Leak', 'Broken Sidewalk', 'Park Maintenance', 'Other'],
+    default: 'Other',
+  },
   reportedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -21,7 +26,7 @@ const issueSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'In Progress', 'Resolved'],
+    enum: ['Pending', 'In Progress', 'Resolved', 'Rejected'],
     default: 'Pending',
   },
   imageUrl: {
@@ -36,7 +41,8 @@ const issueSchema = new mongoose.Schema({
   officialResponse: {
     text: { type: String, default: '' },
     respondedAt: { type: Date },
-    respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    respondedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    imageUrl: { type: String, default: '' }
   },
   createdAt: {
     type: Date,

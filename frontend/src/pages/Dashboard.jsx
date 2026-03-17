@@ -9,7 +9,8 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ExclamationCircleIcon,
-  PlusIcon
+  PlusIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import IssueCard from '../components/IssueCard';
 
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterScope, setFilterScope] = useState('All'); // 'All' or 'Mine'
+  const [filterCategory, setFilterCategory] = useState('All');
   
   // Pagination State
   const [page, setPage] = useState(1);
@@ -38,6 +40,7 @@ const Dashboard = () => {
       try {
         let url = `/api/issues?page=${page}&limit=6&status=${filterStatus}`;
         if (filterPriority !== 'All') url += `&priority=${filterPriority}`;
+        if (filterCategory !== 'All') url += `&category=${filterCategory}`;
         if (showUnresponded) url += '&unresponded=true';
         if (filterScope === 'Mine') url += `&reportedBy=${user?._id || user?.id}`;
         
@@ -53,7 +56,7 @@ const Dashboard = () => {
       }
     };
     fetchIssues();
-  }, [page, filterStatus, filterPriority, showUnresponded, filterScope]);
+  }, [page, filterStatus, filterPriority, filterCategory, showUnresponded, filterScope]);
 
   useEffect(() => {
     setPage(1);
@@ -75,6 +78,7 @@ const Dashboard = () => {
     { label: 'Pending', val: statusCounts.Pending, color: 'text-yellow-600' },
     { label: 'In Progress', val: statusCounts['In Progress'], color: 'text-blue-600' },
     { label: 'Resolved', val: statusCounts.Resolved, color: 'text-green-600' },
+    { label: 'Rejected', val: statusCounts.Rejected, color: 'text-red-600' },
   ] : [
     { label: 'Total Reports', val: totalIssues, color: 'text-civic-600' },
     { label: 'Displaying', val: issues.length, color: 'text-indigo-600' },
@@ -208,6 +212,24 @@ const Dashboard = () => {
                   <option value="Medium">Medium Priority</option>
                   <option value="High">High Priority</option>
                   <option value="Critical">Critical Priority</option>
+                </select>
+              </div>
+
+              <div className="relative flex-1">
+                <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="input-field pl-10 h-12 appearance-none"
+                >
+                  <option value="All">All Categories</option>
+                  <option value="Pothole">Pothole</option>
+                  <option value="Garbage">Garbage / Waste</option>
+                  <option value="Street Light">Street Light</option>
+                  <option value="Water Leak">Water Leak</option>
+                  <option value="Broken Sidewalk">Broken Sidewalk</option>
+                  <option value="Park Maintenance">Park Maintenance</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
